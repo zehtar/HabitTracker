@@ -1,6 +1,9 @@
 package com.example.habittracker.ui.screens
 
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -109,9 +112,36 @@ fun HabitTrackerScreen(
             Text("Количество привычек: ${habits.size}")
             Spacer(modifier = Modifier.height(16.dp))
 
-            habits.forEach { habit ->
+            habits.forEachIndexed { index, habit ->
+
+                val nextHabit =
+                    habits.getOrNull(index + 1)
+
+                val bottomSpacing by animateDpAsState(
+
+                    targetValue =
+
+                        if (
+                            habit.completed &&
+                            nextHabit != null &&
+                            !nextHabit.completed
+                        )
+                            20.dp
+                        else
+                            0.dp,
+
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessLow
+                    ),
+                    label = "BottomSpacing"
+                )
 
                 HabitCard(
+
+                    modifier = Modifier.padding(
+                        bottom = bottomSpacing
+                    ),
                     habit = habit,
                     completed = habit.completed,
                     onClick = {
