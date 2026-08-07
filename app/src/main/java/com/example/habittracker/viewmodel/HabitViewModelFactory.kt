@@ -21,6 +21,9 @@ class HabitViewModelFactory(
             HabitRepository(database)
 
         @Suppress("UNCHECKED_CAST")
-        return HabitViewModel(repository) as T
+        return HabitViewModel(
+            repository,
+            context.applicationContext
+        ) as T
     }
 }

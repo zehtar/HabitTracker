@@ -11,6 +11,9 @@ composeBom = "2026.02.01"
 lifecycleViewModelCompose = "2.9.2"
 room = "2.8.0"
 navigationCompose = "2.9.3"
+uiGeometry = "1.11.4"
+uiGraphics = "1.11.4"
+inkBrush = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +36,9 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+androidx-compose-ui-geometry = { group = "androidx.compose.ui", name = "ui-geometry", version.ref = "uiGeometry" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+androidx-ink-brush = { group = "androidx.ink", name = "ink-brush", version.ref = "inkBrush" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

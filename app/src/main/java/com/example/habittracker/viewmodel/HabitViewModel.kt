@@ -8,9 +8,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
+import android.content.Context
+import com.example.habittracker.widget.WidgetUpdater
 
 class HabitViewModel(
-    private val repository: HabitRepository
+    private val repository: HabitRepository,
+    private val context: Context
 ) : ViewModel() {
     private val _weekStart = MutableStateFlow(
         LocalDate.now().with(DayOfWeek.MONDAY)
@@ -94,7 +97,7 @@ class HabitViewModel(
                 completed = completed,
                 minutesSpent = minutesSpent
             )
-
+            WidgetUpdater.update(context)
         }
     }
 }

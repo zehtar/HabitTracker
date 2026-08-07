@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.dp
 import com.example.habittracker.ui.theme.HabitTrackerTheme
 import com.example.habittracker.ui.components.HabitCard
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -28,6 +30,9 @@ import com.example.habittracker.ui.components.HabitBottomSheet
 import com.example.habittracker.ui.components.WeekSelector
 import com.example.habittracker.ui.model.HabitUiModel
 import com.example.habittracker.viewmodel.HabitViewModelFactory
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import com.example.habittracker.widget.WidgetUpdater
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -112,47 +117,66 @@ fun HabitTrackerScreen(
             Text("Количество привычек: ${habits.size}")
             Spacer(modifier = Modifier.height(16.dp))
 
-            habits.forEachIndexed { index, habit ->
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
 
-                val nextHabit =
-                    habits.getOrNull(index + 1)
-
-                val bottomSpacing by animateDpAsState(
-
-                    targetValue =
-
-                        if (
-                            habit.completed &&
-                            nextHabit != null &&
-                            !nextHabit.completed
-                        )
-                            20.dp
-                        else
-                            0.dp,
-
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioNoBouncy,
-                        stiffness = Spring.StiffnessLow
-                    ),
-                    label = "BottomSpacing"
+                contentPadding = PaddingValues(
+                    vertical = 4.dp
                 )
+            ) {
 
-                HabitCard(
+                val sortedHabits = habits.sortedByDescending {
+                    it.completed
+                }
 
-                    modifier = Modifier.padding(
-                        bottom = bottomSpacing
-                    ),
-                    habit = habit,
-                    completed = habit.completed,
-                    onClick = {
-                        selectedHabit = habit
-                        showBottomSheet = true
-                    },
-                    onMenuClick = {
-                        selectedHabit = habit
-                        showDialog = true
+                itemsIndexed(
+                    items = sortedHabits,
+                    key = { _, habit ->
+                        habit.id
                     }
-                )
+                ) { index, habit ->
+
+                    val nextHabit =
+                        sortedHabits.getOrNull(index + 1)
+
+                    HabitCard(
+                        modifier = Modifier
+                            .animateItem(),
+
+                        habit = habit,
+
+                        completed = habit.completed,
+
+                        onClick = {
+                            selectedHabit = habit
+                            showBottomSheet = true
+                        },
+
+                        onMenuClick = {
+                            selectedHabit = habit
+                            showDialog = true
+                        }
+                    )
+
+                    if (
+                        habit.completed &&
+                        nextHabit != null &&
+                        !nextHabit.completed
+                    ) {
+
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .padding(
+                                    horizontal = 24.dp,
+                                    vertical = 8.dp
+                                ),
+
+                            color = MaterialTheme
+                                .colorScheme
+                                .outlineVariant
+                        )
+                    }
+                }
             }
 
 
@@ -208,31 +232,20 @@ fun HabitTrackerScreen(
                     habit = selectedHabit!!,
 
                     onDismiss = {
-
                         showBottomSheet = false
-
                     },
 
                     onEntryChanged = {
-
                             completed,
-
                             minutes ->
-
                         viewModel.updateHabitEntry(
 
                             habitId = selectedHabit!!.id,
-
                             completed = completed,
-
                             minutesSpent = minutes
-
                         )
-
                     }
-
                 )
-
             }
         }
     }

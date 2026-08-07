@@ -44,4 +44,14 @@ interface HabitEntryDao {
     fun getEntriesForDate(
         date: String
     ): Flow<List<HabitEntryEntity>>
+
+    @Query(
+        """
+    SELECT * FROM habit_entries
+    WHERE date = :date
+    """
+    )
+    suspend fun getEntriesForDateOnce(
+        date: String
+    ): List<HabitEntryEntity>
 }
