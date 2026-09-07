@@ -39,7 +39,8 @@ import java.time.LocalDate
 
 @Composable
 fun HabitTrackerScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initialHabitId: Int = -1
 ) {
     var showDialog by remember {
         mutableStateOf(false)
@@ -63,6 +64,23 @@ fun HabitTrackerScreen(
     }
     val habits by viewModel.habits.collectAsState(emptyList())
 
+    LaunchedEffect(initialHabitId, habits) {
+
+        if (
+            initialHabitId != -1 &&
+            selectedHabit == null
+        ) {
+            habits.find {
+                it.id == initialHabitId
+            }?.let { habit ->
+
+                selectedHabit = habit
+                showBottomSheet = true
+
+            }
+        }
+
+    }
     Scaffold(
 
         floatingActionButton = {

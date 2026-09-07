@@ -12,48 +12,35 @@ import com.example.habittracker.ui.screens.HabitTrackerScreen
 import com.example.habittracker.ui.screens.StatisticsScreen
 
 @Composable
-fun HabitNavigation(modifier: Modifier) {
+fun HabitNavigation(
+    modifier: Modifier,
+    initialHabitId: Int = -1
+) {
 
     val navController = rememberNavController()
 
     Scaffold(
-
         bottomBar = {
-
             BottomNavigationBar(
-
                 navController = navController
-
             )
-
         }
 
     ) { innerPadding ->
 
         NavHost(
-
             navController = navController,
-
             startDestination = Screen.Habits.route,
-
             modifier = Modifier.padding(innerPadding)
-
         ) {
 
             composable(Screen.Habits.route) {
-
-                HabitTrackerScreen()
-
+                HabitTrackerScreen(
+                    initialHabitId = initialHabitId
+                )
             }
-
             composable(Screen.Statistics.route) {
-
-                StatisticsScreen()
-
             }
-
         }
-
     }
-
 }
