@@ -8,4 +8,6 @@ sealed class Screen(
 
     data object Statistics : Screen("statistics")
 
+    data object Settings : Screen("settings")
+
 }

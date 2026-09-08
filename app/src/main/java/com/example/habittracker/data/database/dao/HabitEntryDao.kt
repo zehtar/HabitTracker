@@ -1,4 +1,5 @@
 package com.example.habittracker.data.database.dao
+
 import androidx.room.*
 import com.example.habittracker.data.database.entity.HabitEntryEntity
 import kotlinx.coroutines.flow.Flow
@@ -8,6 +9,21 @@ interface HabitEntryDao {
 
     @Upsert
     suspend fun upsertEntry(entry: HabitEntryEntity)
+
+    @Query("DELETE FROM habit_entries WHERE habitId = :habitId")
+    suspend fun deleteEntriesForHabit(
+        habitId: Int
+    )
+    @Query("SELECT * FROM habit_entries")
+    suspend fun getAllEntriesOnce(): List<HabitEntryEntity>
+
+    @Insert
+    suspend fun insertEntries(
+        entries: List<HabitEntryEntity>
+    )
+
+    @Query("DELETE FROM habit_entries")
+    suspend fun deleteAllEntries()
 
     @Query("SELECT * FROM habit_entries")
     fun getAllEntries(): Flow<List<HabitEntryEntity>>
@@ -37,9 +53,9 @@ interface HabitEntryDao {
 
     @Query(
         """
-    SELECT * FROM habit_entries
-    WHERE date = :date
-    """
+        SELECT * FROM habit_entries
+        WHERE date = :date
+        """
     )
     fun getEntriesForDate(
         date: String
@@ -47,9 +63,9 @@ interface HabitEntryDao {
 
     @Query(
         """
-    SELECT * FROM habit_entries
-    WHERE date = :date
-    """
+        SELECT * FROM habit_entries
+        WHERE date = :date
+        """
     )
     suspend fun getEntriesForDateOnce(
         date: String

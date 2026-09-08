@@ -1,5 +1,6 @@
 package com.example.habittracker.data.repository
 
+import androidx.room.withTransaction
 import com.example.habittracker.data.database.HabitDatabase
 import com.example.habittracker.data.database.entity.HabitEntity
 import com.example.habittracker.data.database.entity.HabitEntryEntity
@@ -86,7 +87,13 @@ class HabitRepository(
         )
     }
     suspend fun deleteHabit(id: Int) {
-        habitDao.deleteHabitById(id)
+
+        database.withTransaction {
+
+            habitEntryDao.deleteEntriesForHabit(id)
+
+            habitDao.deleteHabitById(id)
+        }
     }
 
     suspend fun updateHabitEntry(

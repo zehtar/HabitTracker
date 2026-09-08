@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.habittracker.ui.components.BottomNavigationBar
 import com.example.habittracker.ui.screens.HabitTrackerScreen
 import com.example.habittracker.ui.screens.StatisticsScreen
+import com.example.habittracker.ui.screens.SettingsScreen
 
 @Composable
 fun HabitNavigation(
@@ -39,8 +40,13 @@ fun HabitNavigation(
                     initialHabitId = initialHabitId
                 )
             }
+
             composable(Screen.Statistics.route) {
                 StatisticsScreen()
+            }
+
+            composable(Screen.Settings.route) {
+                SettingsScreen()
             }
         }
     }

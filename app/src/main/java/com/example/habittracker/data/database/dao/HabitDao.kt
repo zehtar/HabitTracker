@@ -20,4 +20,12 @@ interface HabitDao {
 
     @Query("SELECT * FROM habits")
     suspend fun getAllHabitsOnce(): List<HabitEntity>
+
+    @Insert
+    suspend fun insertHabits(
+        habits: List<HabitEntity>
+    )
+
+    @Query("DELETE FROM habits")
+    suspend fun deleteAllHabits()
 }
