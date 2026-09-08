@@ -40,6 +40,7 @@ fun HabitNavigation(
                 )
             }
             composable(Screen.Statistics.route) {
+                StatisticsScreen()
             }
         }
     }
