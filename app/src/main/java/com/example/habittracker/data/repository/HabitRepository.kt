@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.example.habittracker.data.database.HabitDatabase
 import com.example.habittracker.data.database.entity.HabitEntity
 import com.example.habittracker.data.database.entity.HabitEntryEntity
+import com.example.habittracker.ui.model.DailyStatisticUiModel
 import java.time.LocalDate
 import com.example.habittracker.ui.model.HabitUiModel
 import com.example.habittracker.ui.model.StatisticsUiModel
@@ -156,82 +157,109 @@ class HabitRepository(
     ): Flow<StatisticsUiModel> {
 
         return combine(
-
             habitDao.getAllHabits(),
-
             habitEntryDao.getAllEntries(),
-
             selectedDate
-
         ) { habits, entries, date ->
 
-            val weekStart = date.with(DayOfWeek.MONDAY)
+            val weekStart =
+                date.with(DayOfWeek.MONDAY)
 
-            val weekEnd = weekStart.plusDays(6)
+            val weekEnd =
+                weekStart.plusDays(6)
 
-            val selectedDateString = date.toString()
+            val selectedDateString =
+                date.toString()
 
-            val completedToday = entries.count {
+            val totalHabits =
+                habits.size
 
-                it.date == selectedDateString &&
-                        it.completed
-
-            }
-
-            val totalHabits = habits.size
-
-            val todayMinutes = entries
-
-                .filter {
-
-                    it.date == selectedDateString
-
+            val completedToday =
+                entries.count {
+                    it.date == selectedDateString &&
+                            it.completed
                 }
 
-                .sumOf {
+            val todayMinutes =
+                entries
+                    .filter {
+                        it.date == selectedDateString
+                    }
+                    .sumOf {
+                        it.minutesSpent
+                    }
 
+            val weekEntries =
+                entries.filter {
+
+                    val entryDate =
+                        LocalDate.parse(it.date)
+
+                    !entryDate.isBefore(weekStart) &&
+                            !entryDate.isAfter(weekEnd)
+                }
+
+            val completedWeek =
+                weekEntries.count {
+                    it.completed
+                }
+
+            val weekMinutes =
+                weekEntries.sumOf {
                     it.minutesSpent
-
                 }
-
-            val weekEntries = entries.filter {
-
-                val entryDate = LocalDate.parse(it.date)
-
-                !entryDate.isBefore(weekStart) &&
-                        !entryDate.isAfter(weekEnd)
-
-            }
-
-            val completedWeek = weekEntries.count {
-
-                it.completed
-
-            }
-
-            val weekMinutes = weekEntries.sumOf {
-
-                it.minutesSpent
-
-            }
 
             val completionPercent =
-
                 if (totalHabits == 0) {
-
                     0
-
                 } else {
-
                     completedToday * 100 / totalHabits
-
                 }
 
             val averageMinutesPerDay =
-
                 weekMinutes / 7
 
-            return@combine StatisticsUiModel(
+            val dailyStatistics =
+                (0..6).map { dayOffset ->
+
+                    val currentDate =
+                        weekStart.plusDays(dayOffset.toLong())
+
+                    val currentDateString =
+                        currentDate.toString()
+
+                    val completed =
+                        entries.count {
+                            it.date == currentDateString &&
+                                    it.completed
+                        }
+
+                    val percent =
+                        if (totalHabits == 0) {
+                            0
+                        } else {
+                            completed * 100 / totalHabits
+                        }
+
+                    val minutes =
+                        entries
+                            .filter {
+                                it.date == currentDateString
+                            }
+                            .sumOf {
+                                it.minutesSpent
+                            }
+
+                    DailyStatisticUiModel(
+                        date = currentDate,
+                        completed = completed,
+                        total = totalHabits,
+                        completionPercent = percent,
+                        minutes = minutes
+                    )
+                }
+
+            StatisticsUiModel(
 
                 selectedDate = date,
 
@@ -247,8 +275,9 @@ class HabitRepository(
 
                 completionPercent = completionPercent,
 
-                averageMinutesPerDay = averageMinutesPerDay
+                averageMinutesPerDay = averageMinutesPerDay,
 
+                dailyStatistics = dailyStatistics
             )
         }
     }
