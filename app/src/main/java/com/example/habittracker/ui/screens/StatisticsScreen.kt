@@ -191,6 +191,105 @@ fun StatisticsScreen(
         WeeklyActivityChart(
             statistics = statistics.dailyStatistics
         )
+        /// КАЛЕНДАРЬ
+        Spacer(
+            modifier = Modifier.height(24.dp)
+        )
+
+        Text(
+            text = "Календарь",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(
+            modifier = Modifier.height(12.dp)
+        )
+
+        val calendarMonth by viewModel
+            .calendarMonth
+            .collectAsState()
+
+        val calendarStatistics by viewModel
+            .calendarStatistics
+            .collectAsState(initial = emptyList())
+
+        MonthlyCalendar(
+            month = calendarMonth,
+            days = calendarStatistics,
+            onPreviousMonth = {
+                viewModel.previousCalendarMonth()
+            },
+            onNextMonth = {
+                viewModel.nextCalendarMonth()
+            },
+            onDayClick = {
+                viewModel.selectCalendarDay(it)
+            }
+        )
+        val calendarSelectedDay by viewModel
+            .calendarSelectedDay
+            .collectAsState()
+
+        val calendarDayDetails by viewModel
+            .calendarDayDetails
+            .collectAsState(initial = emptyList())
+
+        calendarSelectedDay?.let { day ->
+
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
+
+            CalendarDayDetailsCard(
+                day = day,
+                habits = calendarDayDetails
+            )
+        }
+        // НЕДЕЛЯ
+        val habitTimeForWeek by viewModel
+            .habitTimeForWeek
+            .collectAsState(initial = emptyList())
+
+        Spacer(
+            modifier = Modifier.height(16.dp)
+        )
+
+        Text(
+            text = "Время по привычкам за неделю",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(
+            modifier = Modifier.height(12.dp)
+        )
+
+        HabitTimeSummaryCard(
+            statistics = habitTimeForWeek
+        )
+        // МЕСЯЦ
+        val habitTimeForMonth by viewModel
+            .habitTimeForMonth
+            .collectAsState(initial = emptyList())
+
+        Spacer(
+            modifier = Modifier.height(24.dp)
+        )
+
+        Text(
+            text = "Время по привычкам за месяц",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(
+            modifier = Modifier.height(12.dp)
+        )
+
+        HabitTimeSummaryCard(
+            statistics = habitTimeForMonth
+        )
     }
 }
 

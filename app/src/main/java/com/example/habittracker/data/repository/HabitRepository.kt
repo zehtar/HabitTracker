@@ -4,7 +4,10 @@ import androidx.room.withTransaction
 import com.example.habittracker.data.database.HabitDatabase
 import com.example.habittracker.data.database.entity.HabitEntity
 import com.example.habittracker.data.database.entity.HabitEntryEntity
+import com.example.habittracker.ui.model.CalendarDayHabitUiModel
+import com.example.habittracker.ui.model.CalendarDayUiModel
 import com.example.habittracker.ui.model.DailyStatisticUiModel
+import com.example.habittracker.ui.model.HabitTimeStatisticUiModel
 import java.time.LocalDate
 import com.example.habittracker.ui.model.HabitUiModel
 import com.example.habittracker.ui.model.StatisticsUiModel
@@ -279,6 +282,166 @@ class HabitRepository(
 
                 dailyStatistics = dailyStatistics
             )
+        }
+    }
+    fun getCalendarDayDetails(
+        selectedDate: Flow<LocalDate>
+    ): Flow<List<CalendarDayHabitUiModel>> {
+        return combine(
+            habitDao.getAllHabits(),
+            habitEntryDao.getAllEntries(),
+            selectedDate
+        ) { habits, entries, date ->
+
+            val dateString = date.toString()
+
+            entries
+                .filter {
+                    it.date == dateString &&
+                            it.completed
+                }
+                .mapNotNull { entry ->
+
+                    habits.find {
+                        it.id == entry.habitId
+                    }?.let { habit ->
+
+                        CalendarDayHabitUiModel(
+                            habitId = habit.id,
+                            name = habit.name,
+                            icon = habit.icon,
+                            color = habit.color,
+                            minutesSpent = entry.minutesSpent
+                        )
+                    }
+                }
+        }
+    }
+    fun getCalendarStatistics(
+        month: StateFlow<LocalDate>
+    ): Flow<List<CalendarDayUiModel>> {
+        return combine(
+            habitDao.getAllHabits(),
+            habitEntryDao.getAllEntries(),
+            month
+        ) { habits, entries, selectedMonth ->
+
+            val totalHabits = habits.size
+
+            (1..selectedMonth.lengthOfMonth()).map { day ->
+                val date = selectedMonth
+                    .withDayOfMonth(day)
+
+                val dateString = date.toString()
+
+                val completed = entries.count {
+                    it.date == dateString &&
+                            it.completed
+                }
+
+                val completionPercent =
+                    if (totalHabits == 0) {
+                        0
+                    } else {
+                        completed * 100 / totalHabits
+                    }
+
+                CalendarDayUiModel(
+                    date = date,
+                    completed = completed,
+                    total = totalHabits,
+                    completionPercent = completionPercent
+                )
+            }
+        }
+    }
+
+    fun getHabitTimeForWeek(
+        weekStart: Flow<LocalDate>
+    ): Flow<List<HabitTimeStatisticUiModel>> {
+        return combine(
+            habitDao.getAllHabits(),
+            habitEntryDao.getAllEntries(),
+            weekStart
+        ) { habits, entries, startDate ->
+
+            val weekEnd = startDate.plusDays(6)
+
+            habits.mapNotNull { habit ->
+
+                val minutes = entries
+                    .filter { entry ->
+                        entry.habitId == habit.id &&
+                                runCatching {
+                                    val date = LocalDate.parse(entry.date)
+
+                                    !date.isBefore(startDate) &&
+                                            !date.isAfter(weekEnd)
+                                }.getOrDefault(false)
+                    }
+                    .sumOf { it.minutesSpent }
+
+                if (minutes > 0) {
+                    HabitTimeStatisticUiModel(
+                        habitId = habit.id,
+                        name = habit.name,
+                        icon = habit.icon,
+                        color = habit.color,
+                        minutes = minutes
+                    )
+                } else {
+                    null
+                }
+            }.sortedByDescending {
+                it.minutes
+            }
+        }
+    }
+    fun getHabitTimeForMonth(
+        month: Flow<LocalDate>
+    ): Flow<List<HabitTimeStatisticUiModel>> {
+        return combine(
+            habitDao.getAllHabits(),
+            habitEntryDao.getAllEntries(),
+            month
+        ) { habits, entries, selectedMonth ->
+
+            val firstDay =
+                selectedMonth.withDayOfMonth(1)
+
+            val lastDay =
+                selectedMonth.withDayOfMonth(
+                    selectedMonth.lengthOfMonth()
+                )
+
+            habits.mapNotNull { habit ->
+
+                val minutes = entries
+                    .filter { entry ->
+                        entry.habitId == habit.id &&
+                                runCatching {
+                                    val date = LocalDate.parse(entry.date)
+
+                                    !date.isBefore(firstDay) &&
+                                            !date.isAfter(lastDay)
+                                }.getOrDefault(false)
+                    }
+                    .sumOf { it.minutesSpent }
+
+                if (minutes > 0) {
+                    HabitTimeStatisticUiModel(
+                        habitId = habit.id,
+                        name = habit.name,
+                        icon = habit.icon,
+                        color = habit.color,
+                        minutes = minutes
+                    )
+                } else {
+                    null
+                }
+            }.sortedByDescending {
+                it.minutes
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ package com.example.habittracker.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.habittracker.data.repository.HabitRepository
+import com.example.habittracker.ui.model.CalendarDayUiModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -10,6 +11,11 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import android.content.Context
 import com.example.habittracker.widget.WidgetUpdater
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 
 class HabitViewModel(
     private val repository: HabitRepository,
@@ -28,6 +34,66 @@ class HabitViewModel(
     val statistics = repository.getStatistics(
         selectedDate
     )
+
+    private val _calendarMonth = MutableStateFlow(
+        LocalDate.now().withDayOfMonth(1)
+    )
+
+    val calendarMonth = _calendarMonth.asStateFlow()
+
+    val calendarStatistics =
+        repository.getCalendarStatistics(
+            calendarMonth
+        )
+
+    fun nextCalendarMonth() {
+        _calendarMonth.value =
+            _calendarMonth.value.plusMonths(1)
+    }
+
+    fun previousCalendarMonth() {
+        _calendarMonth.value =
+            _calendarMonth.value.minusMonths(1)
+    }
+    private val _calendarSelectedDay =
+        MutableStateFlow<CalendarDayUiModel?>(null)
+
+    val calendarSelectedDay =
+        _calendarSelectedDay.asStateFlow()
+
+    val calendarDayDetails =
+        _calendarSelectedDay
+            .filterNotNull()
+            .flatMapLatest { day ->
+                repository.getCalendarDayDetails(
+                    flowOf(day.date)
+                )
+            }
+
+    fun selectCalendarDay(
+        day: CalendarDayUiModel
+    ) {
+        _calendarSelectedDay.value = day
+    }
+    val calendarWeekStart =
+        _calendarSelectedDay
+            .map { day ->
+                (day?.date ?: LocalDate.now())
+                    .with(DayOfWeek.MONDAY)
+            }
+
+    val habitTimeForWeek =
+        calendarWeekStart
+            .flatMapLatest { weekStart ->
+                repository.getHabitTimeForWeek(
+                    flowOf(weekStart)
+                )
+            }
+
+    val habitTimeForMonth =
+        repository.getHabitTimeForMonth(
+            calendarMonth
+        )
 
     fun updateHabit(
         id: Int,

@@ -22,3 +22,26 @@ data class DailyStatisticUiModel(
     val completionPercent: Int,
     val minutes: Int
 )
+
+data class CalendarDayUiModel(
+    val date: LocalDate,
+    val completed: Int,
+    val total: Int,
+    val completionPercent: Int
+)
+
+data class CalendarDayHabitUiModel(
+    val habitId: Int,
+    val name: String,
+    val icon: String,
+    val color: Long,
+    val minutesSpent: Int
+)
+
+data class HabitTimeStatisticUiModel(
+    val habitId: Int,
+    val name: String,
+    val icon: String,
+    val color: Long,
+    val minutes: Int
+)
