@@ -27,7 +27,8 @@ data class CalendarDayUiModel(
     val date: LocalDate,
     val completed: Int,
     val total: Int,
-    val completionPercent: Int
+    val completionPercent: Int,
+    val minutes: Int
 )
 
 data class CalendarDayHabitUiModel(

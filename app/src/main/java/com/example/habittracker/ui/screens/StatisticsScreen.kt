@@ -24,6 +24,9 @@ import com.example.habittracker.ui.components.WeeklyActivityChart
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 @Composable
 fun StatisticsScreen(
@@ -214,6 +217,12 @@ fun StatisticsScreen(
             .calendarStatistics
             .collectAsState(initial = emptyList())
 
+        var calendarDisplayMode by remember {
+            mutableStateOf(
+                CalendarDisplayMode.COMPLETION
+            )
+        }
+
         MonthlyCalendar(
             month = calendarMonth,
             days = calendarStatistics,
@@ -225,8 +234,13 @@ fun StatisticsScreen(
             },
             onDayClick = {
                 viewModel.selectCalendarDay(it)
+            },
+            displayMode = calendarDisplayMode,
+            onDisplayModeChange = {
+                calendarDisplayMode = it
             }
         )
+
         val calendarSelectedDay by viewModel
             .calendarSelectedDay
             .collectAsState()

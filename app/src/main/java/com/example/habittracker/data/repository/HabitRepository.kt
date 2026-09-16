@@ -329,14 +329,22 @@ class HabitRepository(
             val totalHabits = habits.size
 
             (1..selectedMonth.lengthOfMonth()).map { day ->
-                val date = selectedMonth
-                    .withDayOfMonth(day)
+
+                val date =
+                    selectedMonth.withDayOfMonth(day)
 
                 val dateString = date.toString()
 
-                val completed = entries.count {
-                    it.date == dateString &&
-                            it.completed
+                val dayEntries = entries.filter {
+                    it.date == dateString
+                }
+
+                val completed = dayEntries.count {
+                    it.completed
+                }
+
+                val minutes = dayEntries.sumOf {
+                    it.minutesSpent
                 }
 
                 val completionPercent =
@@ -350,7 +358,8 @@ class HabitRepository(
                     date = date,
                     completed = completed,
                     total = totalHabits,
-                    completionPercent = completionPercent
+                    completionPercent = completionPercent,
+                    minutes = minutes
                 )
             }
         }

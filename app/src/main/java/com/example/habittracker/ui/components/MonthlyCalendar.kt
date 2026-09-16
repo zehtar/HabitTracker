@@ -7,10 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,13 +21,20 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+enum class CalendarDisplayMode {
+    COMPLETION,
+    TIME
+}
+
 @Composable
 fun MonthlyCalendar(
     month: LocalDate,
     days: List<CalendarDayUiModel>,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
-    onDayClick: (CalendarDayUiModel) -> Unit = {},
+    onDayClick: (CalendarDayUiModel) -> Unit,
+    displayMode: CalendarDisplayMode,
+    onDisplayModeChange: (CalendarDisplayMode) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val monthFormatter = DateTimeFormatter.ofPattern(
@@ -50,10 +54,40 @@ fun MonthlyCalendar(
         it.date.dayOfMonth
     }
 
+
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = displayMode == CalendarDisplayMode.COMPLETION,
+                onClick = {
+                    onDisplayModeChange(
+                        CalendarDisplayMode.COMPLETION
+                    )
+                },
+                label = {
+                    Text("Выполнение")
+                },
+                modifier = Modifier.weight(1f)
+            )
 
+            FilterChip(
+                selected = displayMode == CalendarDisplayMode.TIME,
+                onClick = {
+                    onDisplayModeChange(
+                        CalendarDisplayMode.TIME
+                    )
+                },
+                label = {
+                    Text("Время")
+                },
+                modifier = Modifier.weight(1f)
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -149,6 +183,7 @@ fun MonthlyCalendar(
 
                         CalendarDay(
                             day = day,
+                            displayMode = displayMode,
                             onClick = {
                                 day?.let(onDayClick)
                             },
@@ -175,21 +210,35 @@ fun MonthlyCalendar(
             modifier = Modifier.height(12.dp)
         )
 
-        CalendarLegend()
+        if (displayMode == CalendarDisplayMode.COMPLETION) {
+            CalendarLegend()
+        } else {
+            CalendarTimeLegend()
+        }
     }
 }
 
 @Composable
-private fun CalendarDay(
+fun CalendarDay(
     day: CalendarDayUiModel?,
+    displayMode: CalendarDisplayMode,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val backgroundColor =
-        calendarActivityColor(
-            completionPercent =
-                day?.completionPercent ?: 0
-        )
+    val backgroundColor = when {
+        day == null ->
+            Color.Transparent
+
+        displayMode == CalendarDisplayMode.COMPLETION ->
+            calendarActivityColor(
+                day.completionPercent
+            )
+
+        else ->
+            calendarTimeColor(
+                day.minutes
+            )
+    }
 
     Box(
         modifier = modifier
@@ -221,7 +270,30 @@ private fun CalendarDay(
         )
     }
 }
+@Composable
+private fun calendarTimeColor(
+    minutes: Int
+): Color {
+    val primary =
+        MaterialTheme.colorScheme.primary
 
+    return when {
+        minutes == 0 ->
+            MaterialTheme.colorScheme.surfaceContainerHighest
+
+        minutes <= 15 ->
+            primary.copy(alpha = 0.30f)
+
+        minutes <= 30 ->
+            primary.copy(alpha = 0.50f)
+
+        minutes <= 60 ->
+            primary.copy(alpha = 0.75f)
+
+        else ->
+            primary
+    }
+}
 @Composable
 private fun calendarActivityColor(
     completionPercent: Int
@@ -283,6 +355,52 @@ private fun CalendarLegend() {
         LegendItem(
             color = primary,
             text = "76–100%"
+        )
+    }
+}
+@Composable
+private fun CalendarTimeLegend() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "0 мин",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(
+            modifier = Modifier.width(6.dp)
+        )
+
+        listOf(
+            0,
+            15,
+            30,
+            60,
+            120
+        ).forEach { minutes ->
+
+            Box(
+                modifier = Modifier
+                    .size(14.dp)
+                    .background(
+                        calendarTimeColor(minutes),
+                        RoundedCornerShape(3.dp)
+                    )
+            )
+
+            Spacer(
+                modifier = Modifier.width(4.dp)
+            )
+        }
+
+        Text(
+            text = "120+ мин",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
