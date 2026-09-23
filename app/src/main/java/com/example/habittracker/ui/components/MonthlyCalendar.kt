@@ -362,45 +362,45 @@ private fun CalendarLegend() {
 private fun CalendarTimeLegend() {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.End,
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = "0 мин",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        LegendItem(
+            color = MaterialTheme
+                .colorScheme
+                .surfaceContainerHighest,
+            text = "0 мин"
         )
 
-        Spacer(
-            modifier = Modifier.width(6.dp)
+        LegendItem(
+            color = MaterialTheme
+                .colorScheme
+                .primary
+                .copy(alpha = 0.30f),
+            text = "1–15 мин"
         )
 
-        listOf(
-            0,
-            15,
-            30,
-            60,
-            120
-        ).forEach { minutes ->
+        LegendItem(
+            color = MaterialTheme
+                .colorScheme
+                .primary
+                .copy(alpha = 0.50f),
+            text = "16–30 мин"
+        )
 
-            Box(
-                modifier = Modifier
-                    .size(14.dp)
-                    .background(
-                        calendarTimeColor(minutes),
-                        RoundedCornerShape(3.dp)
-                    )
-            )
+        LegendItem(
+            color = MaterialTheme
+                .colorScheme
+                .primary
+                .copy(alpha = 0.75f),
+            text = "31–60 мин"
+        )
 
-            Spacer(
-                modifier = Modifier.width(4.dp)
-            )
-        }
-
-        Text(
-            text = "120+ мин",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        LegendItem(
+            color = MaterialTheme
+                .colorScheme
+                .primary,
+            text = "60+ мин"
         )
     }
 }

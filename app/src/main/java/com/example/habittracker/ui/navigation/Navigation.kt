@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.habittracker.ui.components.BottomNavigationBar
 import com.example.habittracker.ui.screens.ActivityStatisticsScreen
 import com.example.habittracker.ui.screens.HabitTrackerScreen
+import com.example.habittracker.ui.screens.RemindersScreen
 import com.example.habittracker.ui.screens.StatisticsScreen
 import com.example.habittracker.ui.screens.SettingsScreen
 
@@ -58,6 +59,14 @@ fun HabitNavigation(
 
             composable(Screen.ActivityStatistics.route) {
                 ActivityStatisticsScreen()
+            }
+
+            composable(Screen.Reminders.route) {
+                RemindersScreen(
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
         }
     }

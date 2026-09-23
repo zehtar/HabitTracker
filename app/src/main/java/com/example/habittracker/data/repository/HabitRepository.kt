@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.example.habittracker.data.database.HabitDatabase
 import com.example.habittracker.data.database.entity.HabitEntity
 import com.example.habittracker.data.database.entity.HabitEntryEntity
+import com.example.habittracker.data.database.entity.HabitReminderEntity
 import com.example.habittracker.ui.model.CalendarDayHabitUiModel
 import com.example.habittracker.ui.model.CalendarDayUiModel
 import com.example.habittracker.ui.model.DailyStatisticUiModel
@@ -21,6 +22,7 @@ class HabitRepository(
 
     private val habitEntryDao = database.habitEntryDao()
 
+    private val habitReminderDao = database.habitReminderDao()
     fun getHabitsForDate(
         selectedDate: Flow<LocalDate>
     ): Flow<List<HabitUiModel>> {
@@ -452,5 +454,51 @@ class HabitRepository(
                 it.minutes
             }
         }
+    }
+    fun getRemindersForHabit(
+        habitId: Int
+    ): Flow<List<HabitReminderEntity>> {
+        return habitReminderDao.getRemindersForHabit(habitId)
+    }
+
+    fun getEnabledReminders(): Flow<List<HabitReminderEntity>> {
+        return habitReminderDao.getEnabledReminders()
+    }
+
+    suspend fun getReminderById(
+        id: Int
+    ): HabitReminderEntity? {
+        return habitReminderDao.getReminderById(id)
+    }
+
+    suspend fun addReminder(
+        reminder: HabitReminderEntity
+    ): Long {
+        return habitReminderDao.insertReminder(reminder)
+    }
+
+    suspend fun updateReminder(
+        reminder: HabitReminderEntity
+    ) {
+        habitReminderDao.updateReminder(reminder)
+    }
+
+    suspend fun deleteReminder(
+        reminder: HabitReminderEntity
+    ) {
+        habitReminderDao.deleteReminder(reminder)
+    }
+
+    suspend fun deleteRemindersForHabit(
+        habitId: Int
+    ) {
+        habitReminderDao.deleteRemindersForHabit(habitId)
+    }
+
+    fun getAllHabits(): Flow<List<HabitEntity>> {
+        return habitDao.getAllHabits()
+    }
+    fun getAllReminders(): Flow<List<HabitReminderEntity>> {
+        return habitReminderDao.getAllReminders()
     }
 }

@@ -3,6 +3,7 @@ package com.example.habittracker.ui.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -65,6 +66,27 @@ fun BottomNavigationBar(
 
             label = {
                 Text("Статистика")
+            }
+        )
+        NavigationBarItem(
+            selected = currentRoute == Screen.Reminders.route,
+            onClick = {
+
+                navController.navigate(Screen.Reminders.route) {
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
+                }
+            },
+
+            icon = {
+                Icon(
+                    Icons.Default.Notifications,
+                    contentDescription = "Напоминания"
+                )
+            },
+
+            label = {
+                Text("Напоминания")
             }
         )
         NavigationBarItem(

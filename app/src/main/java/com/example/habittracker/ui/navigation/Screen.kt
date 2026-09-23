@@ -11,4 +11,6 @@ sealed class Screen(
     data object Settings : Screen("settings")
 
     data object ActivityStatistics : Screen("activity_statistics")
+
+    data object Reminders : Screen("reminders")
 }

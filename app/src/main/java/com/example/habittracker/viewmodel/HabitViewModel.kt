@@ -10,7 +10,10 @@ import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import android.content.Context
+import com.example.habittracker.data.database.entity.HabitReminderEntity
+import com.example.habittracker.notification.HabitReminderScheduler
 import com.example.habittracker.widget.WidgetUpdater
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
@@ -166,4 +169,107 @@ class HabitViewModel(
             WidgetUpdater.update(context)
         }
     }
+
+    fun getRemindersForHabit(
+        habitId: Int
+    ): Flow<List<HabitReminderEntity>> {
+        return repository.getRemindersForHabit(habitId)
+    }
+    fun addReminder(
+        habitId: Int,
+        hour: Int,
+        minute: Int,
+        enabled: Boolean = true,
+        repeatType: String = "DAILY"
+    ) {
+        viewModelScope.launch {
+
+            val reminder = HabitReminderEntity(
+                habitId = habitId,
+                hour = hour,
+                minute = minute,
+                enabled = enabled,
+                repeatType = repeatType
+            )
+
+            val reminderId =
+                repository.addReminder(reminder)
+
+            if (enabled) {
+                reminderScheduler.scheduleReminder(
+                    reminder.copy(
+                        id = reminderId.toInt()
+                    )
+                )
+            }
+        }
+    }
+
+    fun updateReminder(
+        reminder: HabitReminderEntity
+    ) {
+        viewModelScope.launch {
+
+            repository.updateReminder(reminder)
+
+            if (reminder.enabled) {
+                reminderScheduler.scheduleReminder(
+                    reminder
+                )
+            } else {
+                reminderScheduler.cancelReminder(
+                    reminder.id
+                )
+            }
+        }
+    }
+
+    fun deleteReminder(
+        reminder: HabitReminderEntity
+    ) {
+        viewModelScope.launch {
+
+            reminderScheduler.cancelReminder(
+                reminder.id
+            )
+
+            repository.deleteReminder(
+                reminder
+            )
+        }
+    }
+
+    fun toggleReminder(
+        reminder: HabitReminderEntity
+    ) {
+        viewModelScope.launch {
+
+            val updatedReminder =
+                reminder.copy(
+                    enabled = !reminder.enabled
+                )
+
+            repository.updateReminder(
+                updatedReminder
+            )
+
+            if (updatedReminder.enabled) {
+                reminderScheduler.scheduleReminder(
+                    updatedReminder
+                )
+            } else {
+                reminderScheduler.cancelReminder(
+                    updatedReminder.id
+                )
+            }
+        }
+    }
+    val allHabits = repository.getAllHabits()
+
+    val allReminders = repository.getEnabledReminders()
+
+    private val reminderScheduler =
+        HabitReminderScheduler(
+            context.applicationContext
+        )
 }
