@@ -32,6 +32,7 @@ data class HabitReminderEntity(
 
     val enabled: Boolean = true,
 
-    val repeatType: String = "DAILY"
+    val repeatType: String = "DAILY",
 
+    val requireCompletion: Boolean = false
 )

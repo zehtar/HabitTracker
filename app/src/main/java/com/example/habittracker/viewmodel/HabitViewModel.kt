@@ -180,7 +180,8 @@ class HabitViewModel(
         hour: Int,
         minute: Int,
         enabled: Boolean = true,
-        repeatType: String = "DAILY"
+        repeatType: String = "DAILY",
+        requireCompletion: Boolean = false
     ) {
         viewModelScope.launch {
 
@@ -189,7 +190,8 @@ class HabitViewModel(
                 hour = hour,
                 minute = minute,
                 enabled = enabled,
-                repeatType = repeatType
+                repeatType = repeatType,
+                requireCompletion = requireCompletion
             )
 
             val reminderId =

@@ -18,7 +18,10 @@ object DatabaseProvider {
                 "habit_database",
 
             )
-                .addMigrations(MIGRATION_2_3)
+                .addMigrations(
+                    MIGRATION_2_3,
+                    MIGRATION_3_4
+                )
                 .fallbackToDestructiveMigration()
                 .build()
 

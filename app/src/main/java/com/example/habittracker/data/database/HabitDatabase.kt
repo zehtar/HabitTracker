@@ -17,15 +17,13 @@ import com.example.habittracker.data.database.entity.HabitReminderEntity
         HabitEntryEntity::class,
         HabitReminderEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class HabitDatabase : RoomDatabase() {
 
     abstract fun habitDao(): HabitDao
-
     abstract fun habitEntryDao(): HabitEntryDao
-
     abstract fun habitReminderDao(): HabitReminderDao
 }
 
@@ -54,6 +52,20 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
             """
             CREATE INDEX IF NOT EXISTS index_habit_reminders_habitId
             ON habit_reminders(habitId)
+            """.trimIndent()
+        )
+    }
+}
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+
+    override fun migrate(
+        database: SupportSQLiteDatabase
+    ) {
+        database.execSQL(
+            """
+            ALTER TABLE habit_reminders
+            ADD COLUMN requireCompletion INTEGER NOT NULL DEFAULT 0
             """.trimIndent()
         )
     }

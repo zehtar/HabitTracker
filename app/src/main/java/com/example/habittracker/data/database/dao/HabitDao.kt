@@ -28,4 +28,15 @@ interface HabitDao {
 
     @Query("DELETE FROM habits")
     suspend fun deleteAllHabits()
+
+    @Query(
+        """
+    SELECT * FROM habits
+    WHERE id = :id
+    LIMIT 1
+    """
+    )
+    suspend fun getHabitById(
+        id: Int
+    ): HabitEntity?
 }

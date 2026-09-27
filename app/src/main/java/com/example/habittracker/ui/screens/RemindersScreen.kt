@@ -181,12 +181,17 @@ fun RemindersScreen(
             onDismiss = {
                 showAddDialog = false
             },
-            onSave = { habitId, hour, minute ->
+            onSave = {
+                    habitId,
+                    hour,
+                    minute,
+                    requireCompletion ->
 
                 viewModel.addReminder(
                     habitId = habitId,
                     hour = hour,
-                    minute = minute
+                    minute = minute,
+                    requireCompletion = requireCompletion
                 )
 
                 showAddDialog = false
@@ -202,13 +207,18 @@ fun RemindersScreen(
             onDismiss = {
                 editingReminder = null
             },
-            onSave = { habitId, hour, minute ->
+            onSave = {
+                    habitId,
+                    hour,
+                    minute,
+                    requireCompletion ->
 
                 viewModel.updateReminder(
                     reminder.copy(
                         habitId = habitId,
                         hour = hour,
-                        minute = minute
+                        minute = minute,
+                        requireCompletion = requireCompletion
                     )
                 )
 
@@ -315,7 +325,8 @@ fun ReminderDialog(
     onSave: (
         habitId: Int,
         hour: Int,
-        minute: Int
+        minute: Int,
+        requireCompletion: Boolean
     ) -> Unit
 ) {
     val calendar = Calendar.getInstance()
@@ -324,6 +335,11 @@ fun ReminderDialog(
         mutableStateOf(
             reminder?.habitId
                 ?: habits.firstOrNull()?.id
+        )
+    }
+    var requireCompletion by remember {
+        mutableStateOf(
+            reminder?.requireCompletion ?: false
         )
     }
 
@@ -407,6 +423,37 @@ fun ReminderDialog(
                         style = MaterialTheme.typography.titleLarge
                     )
                 }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            requireCompletion = !requireCompletion
+                        }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = "Требовать выполнения",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+
+                        Text(
+                            text = "Напоминание нельзя будет закрыть без выполнения привычки",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Switch(
+                        checked = requireCompletion,
+                        onCheckedChange = {
+                            requireCompletion = it
+                        }
+                    )
+                }
             }
         },
 
@@ -420,9 +467,10 @@ fun ReminderDialog(
                         selectedHabitId ?: return@TextButton
 
                     onSave(
-                        habitId,
+                        selectedHabitId ?: return@TextButton,
                         timePickerState.hour,
-                        timePickerState.minute
+                        timePickerState.minute,
+                        requireCompletion
                     )
 
                     onDismiss()
