@@ -13,6 +13,7 @@ import com.example.habittracker.ui.screens.HabitTrackerScreen
 import com.example.habittracker.ui.screens.RemindersScreen
 import com.example.habittracker.ui.screens.StatisticsScreen
 import com.example.habittracker.ui.screens.SettingsScreen
+import com.example.habittracker.ui.screens.FullStatisticsScreen
 
 @Composable
 fun HabitNavigation(
@@ -49,6 +50,11 @@ fun HabitNavigation(
                         navController.navigate(
                             Screen.ActivityStatistics.route
                         )
+                    },
+                    onOpenFullStatistics = {
+                        navController.navigate(
+                            Screen.FullStatistics.route
+                        )
                     }
                 )
             }
@@ -59,6 +65,14 @@ fun HabitNavigation(
 
             composable(Screen.ActivityStatistics.route) {
                 ActivityStatisticsScreen()
+            }
+
+            composable(Screen.FullStatistics.route) {
+                FullStatisticsScreen(
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
 
             composable(Screen.Reminders.route) {

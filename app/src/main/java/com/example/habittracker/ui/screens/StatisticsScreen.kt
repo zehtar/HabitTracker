@@ -30,7 +30,8 @@ import androidx.compose.runtime.setValue
 
 @Composable
 fun StatisticsScreen(
-    onOpenActivityStatistics: () -> Unit
+    onOpenActivityStatistics: () -> Unit,
+    onOpenFullStatistics: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -303,6 +304,24 @@ fun StatisticsScreen(
 
         HabitTimeSummaryCard(
             statistics = habitTimeForMonth
+        )
+
+        Spacer(
+            modifier = Modifier.height(24.dp)
+        )
+
+        TextButton(
+            onClick = onOpenFullStatistics,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Открыть полную статистику",
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+
+        Spacer(
+            modifier = Modifier.height(8.dp)
         )
     }
 }

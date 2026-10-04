@@ -23,6 +23,21 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.rememberTimePickerState
 import java.util.Calendar
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RemindersScreen(
@@ -316,6 +331,7 @@ private fun formatReminderTime(
         minute
     )
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReminderDialog(
@@ -333,141 +349,368 @@ fun ReminderDialog(
 
     var selectedHabitId by remember {
         mutableStateOf(
-            reminder?.habitId
-                ?: habits.firstOrNull()?.id
+            reminder?.habitId ?: habits.firstOrNull()?.id
         )
     }
+
     var requireCompletion by remember {
-        mutableStateOf(
-            reminder?.requireCompletion ?: false
-        )
+        mutableStateOf(reminder?.requireCompletion ?: false)
     }
 
     var showTimePicker by remember {
         mutableStateOf(false)
     }
 
+    var expanded by remember {
+        mutableStateOf(false)
+    }
+
     val timePickerState = rememberTimePickerState(
         initialHour = reminder?.hour
             ?: calendar.get(Calendar.HOUR_OF_DAY),
-
         initialMinute = reminder?.minute
             ?: calendar.get(Calendar.MINUTE),
         is24Hour = true
     )
 
+    val selectedHabit = habits.find {
+        it.id == selectedHabitId
+    }
+
+    val isEditing = reminder != null
+
     AlertDialog(
         onDismissRequest = onDismiss,
-
-
-
+        title = {
+            Text(
+                text = if (isEditing) {
+                    "Редактирование"
+                } else {
+                    "Новое напоминание"
+                },
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
+                // Выбор привычки
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Привычка",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-                Text(
-                    text = "Привычка",
-                    style = MaterialTheme.typography.titleMedium
-                )
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = {
+                            expanded = it
+                        }
+                    ) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                                .clickable {
+                                    expanded = true
+                                },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor =
+                                    MaterialTheme.colorScheme.surfaceContainerLow
+                            ),
+                            border = BorderStroke(
+                                1.dp,
+                                MaterialTheme.colorScheme.outlineVariant
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                if (selectedHabit != null) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(44.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(
+                                                Color(selectedHabit.color)
+                                                    .copy(alpha = 0.15f)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = selectedHabit.icon,
+                                            style = MaterialTheme.typography.titleLarge
+                                        )
+                                    }
 
-                habits.forEach { habit ->
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(
+                                            text = selectedHabit.name,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = "Выбранная привычка",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                } else {
+                                    Text(
+                                        text = "Нет доступных привычек",
+                                        modifier = Modifier.weight(1f),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
 
+                                Icon(
+                                    imageVector = Icons.Default.ExpandMore,
+                                    contentDescription = "Выбрать привычку",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = {
+                                expanded = false
+                            }
+                        ) {
+                            habits.forEach { habit ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(36.dp)
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(
+                                                        Color(habit.color)
+                                                            .copy(alpha = 0.15f)
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = habit.icon
+                                                )
+                                            }
+
+                                            Text(
+                                                text = habit.name,
+                                                fontWeight =
+                                                    if (habit.id == selectedHabitId) {
+                                                        FontWeight.SemiBold
+                                                    } else {
+                                                        FontWeight.Normal
+                                                    }
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        selectedHabitId = habit.id
+                                        expanded = false
+                                    },
+                                    trailingIcon = {
+                                        if (habit.id == selectedHabitId) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = "Выбрано",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Выбор времени
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Время напоминания",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showTimePicker = true
+                            },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme.colorScheme.surfaceContainerLow
+                        ),
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AccessTime,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = String.format(
+                                        "%02d:%02d",
+                                        timePickerState.hour,
+                                        timePickerState.minute
+                                    ),
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Ежедневно",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            Text(
+                                text = "Изменить",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
+                // Обязательное выполнение
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor =
+                            if (requireCompletion) {
+                                MaterialTheme.colorScheme.primaryContainer
+                                    .copy(alpha = 0.45f)
+                            } else {
+                                MaterialTheme.colorScheme.surfaceContainerLow
+                            }
+                    ),
+                    border = BorderStroke(
+                        1.dp,
+                        if (requireCompletion) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        } else {
+                            MaterialTheme.colorScheme.outlineVariant
+                        }
+                    )
+                ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                selectedHabitId = habit.id
+                                requireCompletion = !requireCompletion
                             }
-                            .padding(vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    if (requireCompletion) {
+                                        MaterialTheme.colorScheme.primary
+                                            .copy(alpha = 0.12f)
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsActive,
+                                contentDescription = null,
+                                tint = if (requireCompletion) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                        }
 
-                        RadioButton(
-                            selected = selectedHabitId == habit.id,
-                            onClick = {
-                                selectedHabitId = habit.id
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "Требовать выполнения",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+
+                            Text(
+                                text = "Уведомление будет возвращаться, пока привычка не выполнена",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Switch(
+                            checked = requireCompletion,
+                            onCheckedChange = {
+                                requireCompletion = it
                             }
-                        )
-
-                        Spacer(
-                            modifier = Modifier.width(8.dp)
-                        )
-
-                        Text(
-                            text = habit.name
                         )
                     }
-                }
-
-                HorizontalDivider()
-
-                Text(
-                    text = "Время",
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                OutlinedButton(
-                    onClick = {
-                        showTimePicker = true
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = String.format(
-                            "%02d:%02d",
-                            timePickerState.hour,
-                            timePickerState.minute
-                        ),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            requireCompletion = !requireCompletion
-                        }
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            text = "Требовать выполнения",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-
-                        Text(
-                            text = "Напоминание нельзя будет закрыть без выполнения привычки",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Switch(
-                        checked = requireCompletion,
-                        onCheckedChange = {
-                            requireCompletion = it
-                        }
-                    )
                 }
             }
         },
-
         confirmButton = {
-
-            TextButton(
+            Button(
                 enabled = selectedHabitId != null,
                 onClick = {
-
-                    val habitId =
-                        selectedHabitId ?: return@TextButton
+                    val habitId = selectedHabitId ?: return@Button
 
                     onSave(
-                        selectedHabitId ?: return@TextButton,
+                        habitId,
                         timePickerState.hour,
                         timePickerState.minute,
                         requireCompletion
@@ -476,10 +719,15 @@ fun ReminderDialog(
                     onDismiss()
                 }
             ) {
-                Text("Сохранить")
+                Text(
+                    text = if (isEditing) {
+                        "Сохранить"
+                    } else {
+                        "Создать"
+                    }
+                )
             }
         },
-
         dismissButton = {
             TextButton(
                 onClick = onDismiss
