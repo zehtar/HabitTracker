@@ -2,6 +2,8 @@ package com.example.habittracker.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -11,20 +13,56 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.habittracker.data.database.entity.HabitEntity
+import com.example.habittracker.ui.model.FullStatisticsPeriod
+import com.example.habittracker.ui.model.HabitFullStatisticsUiModel
+import com.example.habittracker.ui.model.MonthlyComparisonUiModel
+import com.example.habittracker.viewmodel.HabitViewModel
+import com.example.habittracker.viewmodel.HabitViewModelFactory
+import java.time.LocalDate
+import java.time.Month
 
 @Composable
 fun FullStatisticsScreen(
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
 
-    var selectedPeriod by remember {
-        mutableStateOf("Всё время")
-    }
+    val viewModel: HabitViewModel = viewModel(
+        factory = HabitViewModelFactory(context)
+    )
 
-    var selectedHabit by remember {
-        mutableStateOf("Бег")
+    val selectedPeriod by viewModel
+        .selectedFullStatisticsPeriod
+        .collectAsState()
+
+    val selectedHabitId by viewModel
+        .selectedFullStatisticsHabit
+        .collectAsState()
+
+    val fullStatistics by viewModel
+        .fullStatistics
+        .collectAsState()
+
+    val habits by viewModel
+        .allHabits
+        .collectAsState(emptyList())
+
+    val overall = fullStatistics.overall
+
+    LaunchedEffect(habits) {
+        if (
+            selectedHabitId == null &&
+            habits.isNotEmpty()
+        ) {
+            viewModel.selectFullStatisticsHabit(
+                habits.first().id
+            )
+        }
     }
 
     Column(
@@ -82,7 +120,7 @@ fun FullStatisticsScreen(
         PeriodSelector(
             selectedPeriod = selectedPeriod,
             onPeriodSelected = {
-                selectedPeriod = it
+                viewModel.selectFullStatisticsPeriod(it)
             }
         )
 
@@ -110,13 +148,15 @@ fun FullStatisticsScreen(
             ) {
 
                 StatisticsValue(
-                    value = "438",
+                    value = overall.completed.toString(),
                     label = "Выполнено",
                     modifier = Modifier.weight(1f)
                 )
 
                 StatisticsValue(
-                    value = "12 ч 40 мин",
+                    value = formatMinutes(
+                        overall.totalMinutes
+                    ),
                     label = "Время",
                     modifier = Modifier.weight(1f)
                 )
@@ -132,13 +172,13 @@ fun FullStatisticsScreen(
             ) {
 
                 StatisticsValue(
-                    value = "82%",
+                    value = "${overall.completionPercent}%",
                     label = "Успешность",
                     modifier = Modifier.weight(1f)
                 )
 
                 StatisticsValue(
-                    value = "42 мин",
+                    value = "${overall.averageMinutesPerCompletion} мин",
                     label = "Среднее",
                     modifier = Modifier.weight(1f)
                 )
@@ -179,7 +219,9 @@ fun FullStatisticsScreen(
             modifier = Modifier.height(10.dp)
         )
 
-        MonthlyComparisonCard()
+        MonthlyComparisonCard(
+            comparison = fullStatistics.monthlyComparison
+        )
 
         Spacer(
             modifier = Modifier.height(28.dp)
@@ -198,9 +240,10 @@ fun FullStatisticsScreen(
         )
 
         HabitSelector(
-            selectedHabit = selectedHabit,
-            onHabitSelected = {
-                selectedHabit = it
+            habits = habits,
+            selectedHabitId = selectedHabitId,
+            onHabitSelected = { habitId ->
+                viewModel.selectFullStatisticsHabit(habitId)
             }
         )
 
@@ -208,9 +251,12 @@ fun FullStatisticsScreen(
             modifier = Modifier.height(10.dp)
         )
 
-        HabitStatisticsCard(
-            habitName = selectedHabit
-        )
+        fullStatistics.selectedHabit?.let { habit ->
+
+            HabitStatisticsCard(
+                statistics = habit
+            )
+        }
 
         Spacer(
             modifier = Modifier.height(28.dp)
@@ -334,49 +380,43 @@ fun SectionTitle(
 
 @Composable
 fun PeriodSelector(
-    selectedPeriod: String,
-    onPeriodSelected: (String) -> Unit
+    selectedPeriod: FullStatisticsPeriod,
+    onPeriodSelected: (FullStatisticsPeriod) -> Unit
 ) {
-
     val periods = listOf(
-        "Всё время",
-        "День",
-        "Неделя",
-        "Месяц",
-        "Год"
+        FullStatisticsPeriod.ALL_TIME to "Всё время",
+        FullStatisticsPeriod.DAY to "День",
+        FullStatisticsPeriod.WEEK to "Неделя",
+        FullStatisticsPeriod.MONTH to "Месяц",
+        FullStatisticsPeriod.YEAR to "Год"
     )
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-
-            periods.take(3).forEach { period ->
+            periods.take(3).forEach { (period, title) ->
 
                 if (period == selectedPeriod) {
-
                     Button(
                         onClick = {
                             onPeriodSelected(period)
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(period)
+                        Text(title)
                     }
-
                 } else {
-
                     OutlinedButton(
                         onClick = {
                             onPeriodSelected(period)
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(period)
+                        Text(title)
                     }
                 }
             }
@@ -386,29 +426,25 @@ fun PeriodSelector(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-
-            periods.drop(3).forEach { period ->
+            periods.drop(3).forEach { (period, title) ->
 
                 if (period == selectedPeriod) {
-
                     Button(
                         onClick = {
                             onPeriodSelected(period)
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(period)
+                        Text(title)
                     }
-
                 } else {
-
                     OutlinedButton(
                         onClick = {
                             onPeriodSelected(period)
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(period)
+                        Text(title)
                     }
                 }
             }
@@ -457,12 +493,14 @@ fun ActivityPlaceholderCard() {
 // =============================================================
 
 @Composable
-fun MonthlyComparisonCard() {
-
+fun MonthlyComparisonCard(
+    comparison: MonthlyComparisonUiModel
+) {
     FullStatisticsCard {
 
         Text(
-            text = "Август → Сентябрь",
+            text = "${formatMonth(comparison.previousMonth)} → " +
+                    formatMonth(comparison.currentMonth),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
@@ -473,9 +511,11 @@ fun MonthlyComparisonCard() {
 
         ComparisonRow(
             title = "Выполнено",
-            oldValue = "112",
-            newValue = "138",
-            change = "+23%"
+            oldValue = comparison.previousCompleted.toString(),
+            newValue = comparison.currentCompleted.toString(),
+            change = formatChangePercent(
+                comparison.completedChangePercent
+            )
         )
 
         Spacer(
@@ -484,10 +524,44 @@ fun MonthlyComparisonCard() {
 
         ComparisonRow(
             title = "Время",
-            oldValue = "8 ч 40 мин",
-            newValue = "10 ч 20 мин",
-            change = "+19%"
+            oldValue = formatMinutes(
+                comparison.previousMinutes
+            ),
+            newValue = formatMinutes(
+                comparison.currentMinutes
+            ),
+            change = formatChangePercent(
+                comparison.minutesChangePercent
+            )
         )
+    }
+}
+
+fun formatChangePercent(
+    change: Int
+): String {
+    return when {
+        change > 0 -> "+$change%"
+        change < 0 -> "$change%"
+        else -> "0%"
+    }
+}
+fun formatMonth(
+    date: LocalDate
+): String {
+    return when (date.month) {
+        Month.JANUARY -> "Январь"
+        Month.FEBRUARY -> "Февраль"
+        Month.MARCH -> "Март"
+        Month.APRIL -> "Апрель"
+        Month.MAY -> "Май"
+        Month.JUNE -> "Июнь"
+        Month.JULY -> "Июль"
+        Month.AUGUST -> "Август"
+        Month.SEPTEMBER -> "Сентябрь"
+        Month.OCTOBER -> "Октябрь"
+        Month.NOVEMBER -> "Ноябрь"
+        Month.DECEMBER -> "Декабрь"
     }
 }
 
@@ -572,141 +646,153 @@ fun ComparisonRow(
 
 @Composable
 fun HabitSelector(
-    selectedHabit: String,
-    onHabitSelected: (String) -> Unit
+    habits: List<HabitEntity>,
+    selectedHabitId: Int?,
+    onHabitSelected: (Int) -> Unit
 ) {
-
     FullStatisticsCard {
 
         Text(
-            text = selectedHabit,
+            text = "Привычка",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
 
         Spacer(
-            modifier = Modifier.height(8.dp)
+            modifier = Modifier.height(12.dp)
         )
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        if (habits.isEmpty()) {
+            Text(
+                text = "Нет привычек",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(
+                    items = habits,
+                    key = { it.id }
+                ) { habit ->
 
-            listOf(
-                "Бег",
-                "Чтение",
-                "Учёба"
-            ).forEach { habit ->
-
-                if (habit == selectedHabit) {
-
-                    Button(
-                        onClick = {
-                            onHabitSelected(habit)
+                    if (habit.id == selectedHabitId) {
+                        Button(
+                            onClick = {
+                                onHabitSelected(habit.id)
+                            }
+                        ) {
+                            Text(habit.name)
                         }
-                    ) {
-                        Text(habit)
-                    }
-
-                } else {
-
-                    OutlinedButton(
-                        onClick = {
-                            onHabitSelected(habit)
+                    } else {
+                        OutlinedButton(
+                            onClick = {
+                                onHabitSelected(habit.id)
+                            }
+                        ) {
+                            Text(habit.name)
                         }
-                    ) {
-                        Text(habit)
                     }
                 }
             }
         }
     }
 }
-
 // =============================================================
 // HABIT STATISTICS
 // =============================================================
 
 @Composable
 fun HabitStatisticsCard(
-    habitName: String
+    statistics: HabitFullStatisticsUiModel
 ) {
-
     FullStatisticsCard {
 
         Text(
-            text = habitName,
+            text = statistics.name,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
 
-        Spacer(
-            modifier = Modifier.height(16.dp)
-        )
+        Spacer(modifier = Modifier.height(16.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-
             StatisticsValue(
-                value = "12 дней",
+                value = "${statistics.currentStreak} дней",
                 label = "Текущая серия",
                 modifier = Modifier.weight(1f)
             )
 
             StatisticsValue(
-                value = "24 дня",
+                value = "${statistics.bestStreak} дней",
                 label = "Лучшая серия",
                 modifier = Modifier.weight(1f)
             )
         }
 
-        Spacer(
-            modifier = Modifier.height(10.dp)
-        )
+        Spacer(modifier = Modifier.height(10.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-
             StatisticsValue(
-                value = "87%",
+                value = "${statistics.completionPercent}%",
                 label = "Выполнение",
                 modifier = Modifier.weight(1f)
             )
 
             StatisticsValue(
-                value = "38 мин",
+                value = "${statistics.averageMinutesPerCompletion} мин",
                 label = "Среднее время",
                 modifier = Modifier.weight(1f)
             )
         }
 
-        Spacer(
-            modifier = Modifier.height(10.dp)
-        )
+        Spacer(modifier = Modifier.height(10.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-
             StatisticsValue(
-                value = "116 ч",
+                value = formatMinutes(
+                    statistics.totalMinutes
+                ),
                 label = "Общее время",
                 modifier = Modifier.weight(1f)
             )
 
             StatisticsValue(
-                value = "32 мин",
+                value = "${statistics.averageMinutesPerDay} мин",
                 label = "В среднем в день",
                 modifier = Modifier.weight(1f)
             )
         }
     }
 }
+
+fun formatMinutes(minutes: Int): String {
+    val hours = minutes / 60
+    val remainingMinutes = minutes % 60
+
+    return when {
+        hours > 0 && remainingMinutes > 0 ->
+            "$hours ч $remainingMinutes мин"
+
+        hours > 0 ->
+            "$hours ч"
+
+        else ->
+            "$minutes мин"
+    }
+}
+
 
 // =============================================================
 // CALENDAR PLACEHOLDER

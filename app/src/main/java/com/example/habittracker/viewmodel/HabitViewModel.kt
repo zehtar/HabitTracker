@@ -3,7 +3,7 @@ package com.example.habittracker.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.habittracker.data.repository.HabitRepository
-import com.example.habittracker.ui.model.CalendarDayUiModel
+import com.example.habittracker.ui.model.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -14,11 +14,13 @@ import com.example.habittracker.data.database.entity.HabitReminderEntity
 import com.example.habittracker.notification.HabitReminderScheduler
 import com.example.habittracker.widget.WidgetUpdater
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 class HabitViewModel(
     private val repository: HabitRepository,
@@ -37,7 +39,43 @@ class HabitViewModel(
     val statistics = repository.getStatistics(
         selectedDate
     )
+    private val _selectedFullStatisticsPeriod =
+        MutableStateFlow(
+            FullStatisticsPeriod.ALL_TIME
+        )
 
+    val selectedFullStatisticsPeriod =
+        _selectedFullStatisticsPeriod.asStateFlow()
+
+    fun selectFullStatisticsPeriod(
+        period: FullStatisticsPeriod
+    ) {
+        _selectedFullStatisticsPeriod.value = period
+    }
+
+    private val _selectedFullStatisticsHabit =
+        MutableStateFlow<Int?>(null)
+
+    val selectedFullStatisticsHabit =
+        _selectedFullStatisticsHabit.asStateFlow()
+
+    fun selectFullStatisticsHabit(
+        habitId: Int?
+    ) {
+        _selectedFullStatisticsHabit.value = habitId
+    }
+
+    val fullStatistics: StateFlow<FullStatisticsUiModel> =
+        repository
+            .getFullStatistics(
+                period = selectedFullStatisticsPeriod,
+                selectedHabitId = selectedFullStatisticsHabit
+            )
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = FullStatisticsUiModel()
+            )
     private val _calendarMonth = MutableStateFlow(
         LocalDate.now().withDayOfMonth(1)
     )

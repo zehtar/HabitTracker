@@ -14,15 +14,23 @@ import com.example.habittracker.ui.screens.RemindersScreen
 import com.example.habittracker.ui.screens.StatisticsScreen
 import com.example.habittracker.ui.screens.SettingsScreen
 import com.example.habittracker.ui.screens.FullStatisticsScreen
-
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.habittracker.viewmodel.HabitViewModel
+import com.example.habittracker.viewmodel.HabitViewModelFactory
 @Composable
 fun HabitNavigation(
     modifier: Modifier,
     initialHabitId: Int = -1
 ) {
-
     val navController = rememberNavController()
 
+    val context = LocalContext.current
+
+    val viewModel: HabitViewModel = viewModel(
+        factory = HabitViewModelFactory(context)
+    )
     Scaffold(
         bottomBar = {
             BottomNavigationBar(
