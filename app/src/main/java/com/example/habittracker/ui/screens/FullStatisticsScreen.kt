@@ -18,13 +18,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.habittracker.data.database.entity.HabitEntity
-import com.example.habittracker.ui.model.FullStatisticsPeriod
-import com.example.habittracker.ui.model.HabitFullStatisticsUiModel
-import com.example.habittracker.ui.model.MonthlyComparisonUiModel
-import com.example.habittracker.viewmodel.HabitViewModel
-import com.example.habittracker.viewmodel.HabitViewModelFactory
+import com.example.habittracker.ui.components.*
+import com.example.habittracker.ui.model.*
+import com.example.habittracker.viewmodel.*
 import java.time.LocalDate
 import java.time.Month
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun FullStatisticsScreen(
@@ -53,6 +54,10 @@ fun FullStatisticsScreen(
         .collectAsState(emptyList())
 
     val overall = fullStatistics.overall
+
+    var activityTrendMode by remember {
+        mutableStateOf(ActivityTrendMode.COMPLETION)
+    }
 
     LaunchedEffect(habits) {
         if (
@@ -201,7 +206,30 @@ fun FullStatisticsScreen(
             modifier = Modifier.height(10.dp)
         )
 
-        ActivityPlaceholderCard()
+        FullStatisticsCard {
+            Text(
+                text = "Динамика",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
+
+            ActivityTrendChart(
+                points = remember(fullStatistics.activity, selectedPeriod) {
+                    buildActivityTrendPoints(
+                        activity = fullStatistics.activity,
+                        period = selectedPeriod
+                    )
+                },
+                mode = activityTrendMode,
+                onModeChange = {
+                    activityTrendMode = it
+                }
+            )
+        }
 
         Spacer(
             modifier = Modifier.height(28.dp)
@@ -274,7 +302,9 @@ fun FullStatisticsScreen(
             modifier = Modifier.height(10.dp)
         )
 
-        CalendarPlaceholderCard()
+        HabitHistoryCalendar(
+            days = fullStatistics.habitCalendar
+        )
 
         Spacer(
             modifier = Modifier.height(24.dp)
@@ -798,34 +828,77 @@ fun formatMinutes(minutes: Int): String {
 // CALENDAR PLACEHOLDER
 // =============================================================
 
-@Composable
-fun CalendarPlaceholderCard() {
+private fun buildActivityTrendPoints(
+    activity: List<FullStatisticsDayUiModel>,
+    period: FullStatisticsPeriod
+): List<ActivityTrendPoint> {
 
-    FullStatisticsCard {
+    if (activity.isEmpty()) {
+        return emptyList()
+    }
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(240.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+    val sortedActivity = activity.sortedBy { it.date }
 
-            Text(
-                text = "Календарь выполнения",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+    // Для года и всей истории объединяем дневные данные по месяцам.
+    if (
+        period == FullStatisticsPeriod.YEAR ||
+        period == FullStatisticsPeriod.ALL_TIME
+    ) {
+        val monthFormatter = DateTimeFormatter.ofPattern(
+            if (period == FullStatisticsPeriod.YEAR) {
+                "LLL"
+            } else {
+                "LLL yy"
+            },
+            Locale("ru")
+        )
 
-            Spacer(
-                modifier = Modifier.height(6.dp)
-            )
+        return sortedActivity
+            .groupBy { YearMonth.from(it.date) }
+            .toSortedMap()
+            .map { (month, days) ->
 
-            Text(
-                text = "Здесь будет история выполнения привычки",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+                val completed = days.sumOf {
+                    it.completed
+                }
+
+                val total = days.sumOf {
+                    it.total
+                }
+
+                val completionPercent =
+                    if (total == 0) {
+                        0
+                    } else {
+                        (completed * 100 / total)
+                            .coerceIn(0, 100)
+                    }
+
+                ActivityTrendPoint(
+                    label = month.atDay(1)
+                        .format(monthFormatter),
+                    completionPercent = completionPercent,
+                    minutes = days.sumOf { it.minutes }
+                )
+            }
+    }
+
+    // Для дня, недели и месяца оставляем дневные точки.
+    val dayFormatter = DateTimeFormatter.ofPattern(
+        if (period == FullStatisticsPeriod.DAY) {
+            "d MMM"
+        } else {
+            "d"
+        },
+        Locale("ru")
+    )
+
+    return sortedActivity.map { day ->
+        ActivityTrendPoint(
+            label = day.date.format(dayFormatter),
+            completionPercent = day.completionPercent
+                .coerceIn(0, 100),
+            minutes = day.minutes
+        )
     }
 }
