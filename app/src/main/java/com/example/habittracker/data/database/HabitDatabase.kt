@@ -11,13 +11,14 @@ import com.example.habittracker.data.database.entity.HabitEntity
 import com.example.habittracker.data.database.entity.HabitEntryEntity
 import com.example.habittracker.data.database.entity.HabitReminderEntity
 
+
 @Database(
     entities = [
         HabitEntity::class,
         HabitEntryEntity::class,
         HabitReminderEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class HabitDatabase : RoomDatabase() {
@@ -26,6 +27,33 @@ abstract class HabitDatabase : RoomDatabase() {
     abstract fun habitEntryDao(): HabitEntryDao
     abstract fun habitReminderDao(): HabitReminderDao
 }
+
+val MIGRATION_4_5 = object : Migration(4, 5) {
+
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            """
+            ALTER TABLE habits
+            ADD COLUMN habitType TEXT NOT NULL DEFAULT 'TIME'
+            """.trimIndent()
+        )
+
+        database.execSQL(
+            """
+            ALTER TABLE habits
+            ADD COLUMN guideline TEXT
+            """.trimIndent()
+        )
+
+        database.execSQL(
+            """
+            ALTER TABLE habit_entries
+            ADD COLUMN count INTEGER NOT NULL DEFAULT 0
+            """.trimIndent()
+        )
+    }
+}
+
 
 val MIGRATION_2_3 = object : Migration(2, 3) {
 

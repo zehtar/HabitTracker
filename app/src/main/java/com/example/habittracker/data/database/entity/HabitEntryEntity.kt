@@ -1,5 +1,7 @@
+
 package com.example.habittracker.data.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -24,5 +26,8 @@ data class HabitEntryEntity(
 
     val completed: Boolean,
 
-    val minutesSpent: Int
+    val minutesSpent: Int,
+
+    @ColumnInfo(defaultValue = "0")
+    val count: Int = 0
 )

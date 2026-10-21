@@ -14,7 +14,7 @@ import org.json.JSONObject
 
 object BackupManager {
 
-    private const val BACKUP_VERSION = 1
+    private const val BACKUP_VERSION = 2
 
     suspend fun export(
         context: Context,
@@ -46,6 +46,9 @@ object BackupManager {
             json.put("name", habit.name)
             json.put("icon", habit.icon)
             json.put("color", habit.color)
+            json.put("habitType", habit.habitType)
+            json.put("guideline", habit.guideline)
+
 
             habitsArray.put(json)
         }
@@ -61,6 +64,7 @@ object BackupManager {
             json.put("date", entry.date)
             json.put("completed", entry.completed)
             json.put("minutesSpent", entry.minutesSpent)
+            json.put("count", entry.count)
 
             entriesArray.put(json)
         }
@@ -145,7 +149,10 @@ object BackupManager {
                     id = json.getInt("id"),
                     name = json.getString("name"),
                     icon = json.getString("icon"),
-                    color = json.getLong("color")
+                    color = json.getLong("color"),
+                    habitType = json.optString("habitType", "TIME"),
+                    guideline = json.optString("guideline")
+                        .takeIf { json.has("guideline") && !json.isNull("guideline") }
                 )
             )
         }
@@ -164,7 +171,8 @@ object BackupManager {
                     habitId = json.getInt("habitId"),
                     date = json.getString("date"),
                     completed = json.getBoolean("completed"),
-                    minutesSpent = json.getInt("minutesSpent")
+                    minutesSpent = json.getInt("minutesSpent"),
+                    count = json.optInt("count", 0)
                 )
             )
         }

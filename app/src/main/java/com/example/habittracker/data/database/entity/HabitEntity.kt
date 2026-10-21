@@ -1,5 +1,7 @@
+
 package com.example.habittracker.data.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -13,5 +15,10 @@ data class HabitEntity(
 
     val icon: String,
 
-    val color: Long
+    val color: Long,
+
+    @ColumnInfo(defaultValue = "'TIME'")
+    val habitType: String = "TIME",
+
+    val guideline: String? = null
 )
