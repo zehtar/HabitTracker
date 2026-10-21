@@ -1,3 +1,4 @@
+
 package com.example.habittracker.ui.components
 
 import androidx.compose.foundation.background
@@ -24,29 +25,33 @@ import com.example.habittracker.ui.model.HabitUiModel
 fun HabitBottomSheet(
     habit: HabitUiModel,
     onDismiss: () -> Unit,
-    onEntryChanged: (
-        Boolean,
-        Int
-    ) -> Unit
+    onEntryChanged: (Boolean, Int, Int) -> Unit
 ) {
-
     val sheetState = rememberModalBottomSheetState()
 
-    var completed by remember {
+    var completed by remember(habit.id) {
         mutableStateOf(habit.completed)
     }
-
-    var minutes by remember {
+    var minutes by remember(habit.id) {
         mutableStateOf(habit.minutesSpent.toString())
+    }
+    var count by remember(habit.id) {
+        mutableStateOf(habit.count.toString())
     }
 
     val habitColor = Color(habit.color)
+    val colorScheme = MaterialTheme.colorScheme
+
+    val typeLabel = when (habit.habitType) {
+        "CHECK" -> "Выполнение"
+        "COUNTER" -> "Количество"
+        else -> "Время"
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
     ) {
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -56,301 +61,269 @@ fun HabitBottomSheet(
                     bottom = 32.dp
                 )
         ) {
-
-            // Иконка и название
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
                 Box(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(CircleShape)
-                        .background(
-                            habitColor.copy(alpha = 0.15f)
-                        ),
+                        .background(habitColor.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
-
                     Text(
                         text = habit.icon,
                         style = MaterialTheme.typography.headlineMedium
                     )
                 }
 
-                Spacer(
-                    modifier = Modifier.width(16.dp)
-                )
+                Spacer(Modifier.width(16.dp))
 
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = habit.name,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
-
-                    Spacer(
-                        modifier = Modifier.height(4.dp)
-                    )
-
+                    Spacer(Modifier.height(4.dp))
                     Text(
-                        text = if (completed)
-                            "Привычка выполнена"
-                        else
-                            "Привычка ещё не выполнена",
-
+                        text = typeLabel,
                         style = MaterialTheme.typography.bodyMedium,
-
-                        color =
-                            if (completed)
-                                habitColor
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                        color = habitColor
                     )
                 }
             }
 
-            Spacer(
-                modifier = Modifier.height(28.dp)
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(
-                        if (completed)
-                            habitColor.copy(alpha = 0.12f)
-                        else
-                            MaterialTheme.colorScheme.surfaceVariant
-                    )
-                    .clickable {
-                        completed = !completed
-
-                        onEntryChanged(
-                            completed,
-                            minutes.toIntOrNull() ?: 0
-                        )
-                    }
-                    .padding(
-                        horizontal = 20.dp,
-                        vertical = 18.dp
-                    )
-            ) {
-
-                Row(
+            if (!habit.guideline.isNullOrBlank()) {
+                Spacer(Modifier.height(16.dp))
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    shape = RoundedCornerShape(12.dp),
+                    color = habitColor.copy(alpha = 0.08f)
                 ) {
-
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-
+                    Column(Modifier.padding(14.dp)) {
                         Text(
-                            text = if (completed)
-                                "Выполнено"
-                            else
-                                "Не выполнено",
-
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-
-                            color =
-                                if (completed)
-                                    habitColor
-                                else
-                                    MaterialTheme.colorScheme.onSurface
+                            text = "Мой ориентир",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = colorScheme.onSurfaceVariant
                         )
-
-                        Spacer(
-                            modifier = Modifier.height(4.dp)
-                        )
-
+                        Spacer(Modifier.height(4.dp))
                         Text(
-                            text = if (completed)
-                                "Привычка отмечена"
-                            else
-                                "Нажмите, чтобы выполнить",
-
-                            style = MaterialTheme.typography.bodyMedium,
-
-                            color =
-                                MaterialTheme.colorScheme
-                                    .onSurfaceVariant
-                        )
-                    }
-
-                    Switch(
-                        checked = completed,
-
-                        onCheckedChange = {
-
-                            completed = it
-
-                            onEntryChanged(
-                                completed,
-                                minutes.toIntOrNull() ?: 0
-                            )
-                        }
-                    )
-                }
-            }
-
-            Spacer(
-                modifier = Modifier.height(28.dp)
-            )
-
-
-
-            Spacer(
-                modifier = Modifier.height(24.dp)
-            )
-
-            // Время
-
-            Text(
-                text = "Время выполнения",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement =
-                    Arrangement.spacedBy(8.dp)
-            ) {
-
-                listOf(15, 30, 60, 120).forEach { value ->
-
-                    val selected =
-                        minutes.toIntOrNull() == value
-
-                    Button(
-                        onClick = {
-
-                            minutes = value.toString()
-
-                            onEntryChanged(
-                                completed,
-                                value
-                            )
-                        },
-
-                        modifier = Modifier.weight(1f),
-
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor =
-                                if (selected)
-                                    habitColor
-                                else
-                                    MaterialTheme.colorScheme
-                                        .surfaceVariant,
-
-                            contentColor =
-                                if (selected)
-                                    Color.White
-                                else
-                                    MaterialTheme.colorScheme
-                                        .onSurfaceVariant
-                        )
-                    ) {
-
-                        Text(
-                            text = "$value"
+                            text = habit.guideline,
+                            style = MaterialTheme.typography.bodyLarge
                         )
                     }
                 }
             }
 
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
+            Spacer(Modifier.height(24.dp))
 
-            val colorScheme = MaterialTheme.colorScheme
-
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-
-                BasicTextField(
-                    value = minutes,
-
-                    onValueChange = {
-
-                        minutes = it
-
-                        onEntryChanged(
-                            completed,
-                            it.toIntOrNull() ?: 0
-                        )
-                    },
-
-                    singleLine = true,
-
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        color = colorScheme.onSurface,
-                        textAlign = TextAlign.Center
-                    ),
-
-                    modifier = Modifier
-                        .width(140.dp)
-                        .drawBehind {
-
-                            val lineColor =
-                                if (minutes.isNotEmpty())
-                                    habitColor
-                                else
-                                    colorScheme.outline
-
-                            drawLine(
-                                color = lineColor,
-                                start = Offset(0f, size.height),
-                                end = Offset(size.width, size.height),
-                                strokeWidth = 2.dp.toPx()
+            when (habit.habitType) {
+                "CHECK" -> {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(
+                                if (completed) habitColor.copy(alpha = 0.12f)
+                                else colorScheme.surfaceVariant
                             )
-                        },
-
-                    decorationBox = { innerTextField ->
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-
-                            Box {
-                                if (minutes.isEmpty()) {
-                                    Text(
-                                        text = "Минут",
-                                        color = colorScheme.onSurfaceVariant,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-
-                                innerTextField()
+                            .clickable {
+                                completed = !completed
+                                onEntryChanged(
+                                    completed,
+                                    habit.minutesSpent,
+                                    habit.count
+                                )
                             }
-
-                            Spacer(
-                                modifier = Modifier.width(6.dp)
-                            )
-
+                            .padding(18.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "мин",
+                                text = if (completed) "Выполнено" else "Не выполнено",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = if (completed) habitColor
+                                else colorScheme.onSurface
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = if (completed) "Привычка отмечена"
+                                else "Нажмите, чтобы отметить выполнение",
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = colorScheme.onSurfaceVariant
                             )
                         }
+                        Switch(
+                            checked = completed,
+                            onCheckedChange = {
+                                completed = it
+                                onEntryChanged(
+                                    completed,
+                                    habit.minutesSpent,
+                                    habit.count
+                                )
+                            }
+                        )
                     }
-                )
+                }
+
+                "COUNTER" -> {
+                    Text(
+                        text = "Количество",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(12.dp))
+
+                    NumberInput(
+                        value = count,
+                        onValueChange = { newValue ->
+                            count = newValue
+                            val value = newValue.toIntOrNull() ?: 0
+                            completed = value > 0
+                            onEntryChanged(
+                                completed,
+                                habit.minutesSpent,
+                                value.coerceAtLeast(0)
+                            )
+                        },
+                        placeholder = "Введите количество",
+                        suffix = "шт.",
+                        accentColor = habitColor
+                    )
+                }
+
+                else -> {
+                    Text(
+                        text = "Время выполнения",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(15, 30, 60, 120).forEach { value ->
+                            val selected = minutes.toIntOrNull() == value
+
+                            Button(
+                                onClick = {
+                                    minutes = value.toString()
+                                    completed = value > 0
+                                    onEntryChanged(
+                                        completed,
+                                        value,
+                                        habit.count
+                                    )
+                                },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(
+                                    horizontal = 4.dp,
+                                    vertical = 10.dp
+                                ),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (selected) habitColor
+                                    else colorScheme.surfaceVariant,
+                                    contentColor = if (selected) Color.White
+                                    else colorScheme.onSurfaceVariant
+                                )
+                            ) {
+                                Text("$value")
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    NumberInput(
+                        value = minutes,
+                        onValueChange = { newValue ->
+                            minutes = newValue
+                            val value = newValue.toIntOrNull() ?: 0
+                            completed = value > 0
+                            onEntryChanged(
+                                completed,
+                                value.coerceAtLeast(0),
+                                habit.count
+                            )
+                        },
+                        placeholder = "Введите время",
+                        suffix = "мин",
+                        accentColor = habitColor
+                    )
+                }
             }
+
+            Spacer(Modifier.height(24.dp))
         }
+    }
+}
+
+@Composable
+private fun NumberInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    suffix: String,
+    accentColor: Color
+) {
+    val colorScheme = MaterialTheme.colorScheme
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = { input ->
+                if (input.isEmpty() || input.all { it.isDigit() }) {
+                    onValueChange(input)
+                }
+            },
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                color = colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            ),
+            modifier = Modifier
+                .width(150.dp)
+                .drawBehind {
+                    drawLine(
+                        color = if (value.isNotEmpty()) accentColor
+                        else colorScheme.outline,
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, size.height),
+                        strokeWidth = 2.dp.toPx()
+                    )
+                },
+            decorationBox = { innerTextField ->
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (value.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            color = colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        )
+
+        Spacer(Modifier.width(8.dp))
+
+        Text(
+            text = suffix,
+            color = colorScheme.onSurfaceVariant
+        )
     }
 }

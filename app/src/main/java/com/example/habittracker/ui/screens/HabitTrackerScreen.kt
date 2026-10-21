@@ -199,68 +199,57 @@ fun HabitTrackerScreen(
 
 
             if (showDialog) {
-
                 AddHabitDialog(
-
                     habit = selectedHabit,
-
                     onDismiss = {
                         showDialog = false
                     },
 
-                    onConfirm = { name, icon, color ->
-
+                    onConfirm = { name, icon, color, habitType, guideline ->
                         if (selectedHabit == null) {
-
                             viewModel.addHabit(
-                                name,
-                                icon,
-                                color
+                                name = name,
+                                icon = icon,
+                                color = color,
+                                habitType = habitType,
+                                guideline = guideline
                             )
-
                         } else {
-
                             viewModel.updateHabit(
                                 id = selectedHabit!!.id,
                                 name = name,
                                 icon = icon,
-                                color = color
+                                color = color,
+                                habitType = habitType,
+                                guideline = guideline
                             )
-
                         }
+
                         showDialog = false
                     },
+
                     onDelete = {
-
                         selectedHabit?.let {
-
                             viewModel.deleteHabit(it.id)
-
                         }
-
                         showDialog = false
                     }
                 )
             }
 
             if (showBottomSheet && selectedHabit != null) {
-
                 HabitBottomSheet(
-
                     habit = selectedHabit!!,
-
                     onDismiss = {
                         showBottomSheet = false
                     },
 
-                    onEntryChanged = {
-                            completed,
-                            minutes ->
+                    onEntryChanged = { completed, minutes, count ->
                         viewModel.updateHabitEntry(
-
                             habitId = selectedHabit!!.id,
                             completed = completed,
-                            minutesSpent = minutes
+                            minutesSpent = minutes,
+                            count = count
                         )
                     }
                 )

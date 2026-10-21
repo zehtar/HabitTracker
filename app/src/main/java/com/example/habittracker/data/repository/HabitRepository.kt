@@ -47,7 +47,10 @@ class HabitRepository(
                     icon = habit.icon,
                     color = habit.color,
                     completed = entry?.completed ?: false,
-                    minutesSpent = entry?.minutesSpent ?: 0
+                    minutesSpent = entry?.minutesSpent ?: 0,
+                    habitType = habit.habitType,
+                    guideline = habit.guideline,
+                    count = entry?.count ?: 0
                 )
             }
         }
@@ -58,36 +61,48 @@ class HabitRepository(
     }
 
 
+
     suspend fun updateHabit(
         id: Int,
         name: String,
         icon: String,
-        color: Long
+        color: Long,
+        habitType: String,
+        guideline: String?
     ) {
+        val existingHabit = habitDao.getHabitById(id)
+            ?: return
 
         habitDao.upsertHabit(
-            HabitEntity(
-                id = id,
+            existingHabit.copy(
                 name = name,
                 icon = icon,
-                color = color
+                color = color,
+                habitType = habitType,
+                guideline = guideline
             )
         )
-
     }
+
+
     suspend fun addHabit(
         name: String,
         icon: String,
-        color: Long
+        color: Long,
+        habitType: String = "TIME",
+        guideline: String? = null
     ) {
         habitDao.upsertHabit(
             HabitEntity(
                 name = name,
                 icon = icon,
-                color = color
+                color = color,
+                habitType = habitType,
+                guideline = guideline
             )
         )
     }
+
     suspend fun deleteHabit(id: Int) {
 
         database.withTransaction {
@@ -98,60 +113,40 @@ class HabitRepository(
         }
     }
 
+
     suspend fun updateHabitEntry(
-
         habitId: Int,
-
         date: LocalDate,
-
         completed: Boolean,
-
-        minutesSpent: Int
-
+        minutesSpent: Int,
+        count: Int
     ) {
-
         val oldEntry = habitEntryDao.getEntryForDay(
-
-            habitId,
-            date.toString()
-
+            habitId = habitId,
+            date = date.toString(),
         )
 
         if (oldEntry != null) {
-
             habitEntryDao.upsertEntry(
-
                 oldEntry.copy(
-
                     completed = completed,
-
-                    minutesSpent = minutesSpent
-
+                    minutesSpent = minutesSpent,
+                    count = count
                 )
-
             )
-
         } else {
-
             habitEntryDao.upsertEntry(
-
                 HabitEntryEntity(
-
                     habitId = habitId,
-
                     date = date.toString(),
-
                     completed = completed,
-
-                    minutesSpent = minutesSpent
-
+                    minutesSpent = minutesSpent,
+                    count = count ?: 0
                 )
-
             )
-
         }
-
     }
+
 
     fun getStatistics(
         selectedDate: StateFlow<LocalDate>

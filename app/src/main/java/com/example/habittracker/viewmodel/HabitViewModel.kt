@@ -135,35 +135,44 @@ class HabitViewModel(
         repository.getHabitTimeForMonth(
             calendarMonth
         )
-
     fun updateHabit(
         id: Int,
         name: String,
         icon: String,
-        color: Long
+        color: Long,
+        habitType: String,
+        guideline: String?
     ) {
         viewModelScope.launch {
             repository.updateHabit(
-                id,
-                name,
-                icon,
-                color
+                id = id,
+                name = name,
+                icon = icon,
+                color = color,
+                habitType = habitType,
+                guideline = guideline
             )
         }
     }
+
     fun addHabit(
         name: String,
         icon: String,
-        color: Long
+        color: Long,
+        habitType: String,
+        guideline: String?
     ) {
         viewModelScope.launch {
             repository.addHabit(
-                name,
-                icon,
-                color
+                name = name,
+                icon = icon,
+                color = color,
+                habitType = habitType,
+                guideline = guideline
             )
         }
     }
+
     fun deleteHabit(id: Int) {
         viewModelScope.launch {
             repository.deleteHabit(id)
@@ -191,22 +200,25 @@ class HabitViewModel(
         _selectedDate.value = newWeek
 
     }
+
     fun updateHabitEntry(
         habitId: Int,
         completed: Boolean,
-        minutesSpent: Int
+        minutesSpent: Int,
+        count: Int
     ) {
         viewModelScope.launch {
-
             repository.updateHabitEntry(
                 habitId = habitId,
                 date = selectedDate.value,
                 completed = completed,
-                minutesSpent = minutesSpent
+                minutesSpent = minutesSpent,
+                count = count
             )
             WidgetUpdater.update(context)
         }
     }
+
 
     fun getRemindersForHabit(
         habitId: Int

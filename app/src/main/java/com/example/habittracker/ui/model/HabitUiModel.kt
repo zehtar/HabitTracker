@@ -1,3 +1,4 @@
+
 package com.example.habittracker.ui.model
 
 data class HabitUiModel(
@@ -5,7 +6,9 @@ data class HabitUiModel(
     val name: String,
     val icon: String,
     val color: Long,
-
     val completed: Boolean,
-    val minutesSpent: Int
+    val minutesSpent: Int,
+    val habitType: String = "TIME",
+    val guideline: String? = null,
+    val count: Int = 0
 )
