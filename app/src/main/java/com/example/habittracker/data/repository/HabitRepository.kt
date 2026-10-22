@@ -281,17 +281,35 @@ class HabitRepository(
                 }
                 .mapNotNull { entry ->
                     habitsById[entry.habitId]?.let { habit ->
+
                         CalendarDayHabitUiModel(
                             habitId = habit.id,
                             name = habit.name,
                             icon = habit.icon,
                             color = habit.color,
-                            minutesSpent = if (habit.habitType == "TIME") {
+                            habitType = habit.habitType.uppercase(),
+                            minutesSpent = if (
+                                habit.habitType.equals(
+                                    "TIME",
+                                    ignoreCase = true
+                                )
+                            ) {
                                 entry.minutesSpent.coerceAtLeast(0)
+                            } else {
+                                0
+                            },
+                            count = if (
+                                habit.habitType.equals(
+                                    "COUNTER",
+                                    ignoreCase = true
+                                )
+                            ) {
+                                entry.count.coerceAtLeast(0)
                             } else {
                                 0
                             }
                         )
+
                     }
                 }
         }
@@ -529,6 +547,19 @@ class HabitRepository(
                 }
             }
 
+            fun getCount(entry: HabitEntryEntity): Int {
+                return if (
+                    habitsById[entry.habitId]
+                        ?.habitType
+                        ?.equals("COUNTER", ignoreCase = true) == true
+                ) {
+                    entry.count.coerceAtLeast(0)
+                } else {
+                    0
+                }
+            }
+
+
             val validEntries = entries.mapNotNull { entry ->
                 if (!habitsById.containsKey(entry.habitId)) {
                     null
@@ -601,6 +632,11 @@ class HabitRepository(
             val totalMinutes = periodEntries.sumOf { (entry, _) ->
                 getMinutes(entry)
             }
+
+            val totalCount = periodEntries.sumOf { (entry, _) ->
+                getCount(entry)
+            }
+
 
             val timeCompletions = completedEntries.count { (entry, _) ->
                 habitsById[entry.habitId]?.habitType == "TIME" &&
@@ -780,6 +816,32 @@ class HabitRepository(
                     habitMinutes / periodDays
                 }
 
+            val habitCount = selectedHabitPeriodEntries.sumOf { (entry, _) ->
+                getCount(entry)
+            }
+
+            val habitCountCompletions = selectedHabitPeriodEntries.count {
+                    (entry, _) ->
+                selectedHabit?.habitType.equals(
+                    "COUNTER",
+                    ignoreCase = true
+                ) && entry.count > 0
+            }
+
+            val habitAverageCountPerCompletion =
+                if (habitCountCompletions == 0) {
+                    0
+                } else {
+                    habitCount / habitCountCompletions
+                }
+
+            val habitAverageCountPerDay =
+                if (periodDays == 0) {
+                    0
+                } else {
+                    habitCount / periodDays
+                }
+
             val completedDates = selectedHabitEntries
                 .filter { (entry, _) -> isCompleted(entry) }
                 .map { (_, date) -> date }
@@ -825,8 +887,12 @@ class HabitRepository(
                     completionPercent = habitCompletionPercent,
                     totalMinutes = habitMinutes,
                     averageMinutesPerCompletion = habitAverageMinutesPerCompletion,
-                    averageMinutesPerDay = habitAverageMinutesPerDay
-                )
+                    averageMinutesPerDay = habitAverageMinutesPerDay,
+                    habitType = habit.habitType.uppercase(),
+                    totalCount = habitCount,
+                    averageCountPerCompletion = habitAverageCountPerCompletion,
+                    averageCountPerDay = habitAverageCountPerDay,
+                    )
             }
 
             val habitCalendar = selectedHabit?.let {
@@ -857,6 +923,7 @@ class HabitRepository(
                 period = selectedPeriod,
                 overall = FullStatisticsOverallUiModel(
                     completed = completed,
+                    totalCount = totalCount,
                     totalMinutes = totalMinutes,
                     completionPercent = completionPercent,
                     averageMinutesPerCompletion = averageMinutesPerCompletion,
@@ -866,7 +933,7 @@ class HabitRepository(
                 monthlyComparison = monthlyComparison,
                 selectedHabit = habitStatistics,
                 habitCalendar = habitCalendar
-            )
+                )
         }
     }
 }

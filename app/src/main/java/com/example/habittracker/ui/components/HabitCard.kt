@@ -1,34 +1,34 @@
+
 package com.example.habittracker.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Card
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.ui.Alignment
-import com.example.habittracker.ui.model.HabitUiModel
-import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.habittracker.ui.model.HabitUiModel
 
 @Composable
 fun HabitCard(
@@ -37,65 +37,41 @@ fun HabitCard(
     completed: Boolean,
     onClick: () -> Unit,
     onMenuClick: () -> Unit
-){
+) {
     val scale by animateFloatAsState(
-
-        targetValue =
-            if (completed)
-                1.015f
-            else
-                1f,
-
+        targetValue = if (completed) 1.015f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy
         ),
-
         label = "CardScale"
-
-    )
-
-    val backgroundColor by animateColorAsState(
-        targetValue =
-            if (completed)
-                Color(habit.color).copy(alpha = 0.08f)
-            else
-                MaterialTheme.colorScheme.surface,
-        label = "CardColor"
     )
 
     val verticalPadding by animateDpAsState(
-
-        targetValue =
-            if (completed)
-                14.dp
-            else
-                8.dp,
-
+        targetValue = if (completed) 14.dp else 8.dp,
         animationSpec = spring(
-
             dampingRatio = Spring.DampingRatioNoBouncy,
-
             stiffness = Spring.StiffnessLow
-
         ),
-
         label = "VerticalPadding"
-
     )
 
-
     val borderColor by animateColorAsState(
-
-        targetValue =
-            if (completed)
-                Color(habit.color)
-            else
-                Color(habit.color).copy(alpha = 0.5f),
-
+        targetValue = if (completed) {
+            Color(habit.color)
+        } else {
+            Color(habit.color).copy(alpha = 0.5f)
+        },
         animationSpec = tween(400),
-
         label = "BorderColor"
+    )
 
+    val backgroundColor by animateColorAsState(
+        targetValue = if (completed) {
+            Color(habit.color).copy(alpha = 0.08f)
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
+        label = "CardColor"
     )
 
     Card(
@@ -115,23 +91,14 @@ fun HabitCard(
                 color = borderColor,
                 shape = RoundedCornerShape(20.dp)
             ),
-
         shape = RoundedCornerShape(20.dp),
-
         elevation = CardDefaults.cardElevation(
             defaultElevation = 4.dp
         ),
-
         colors = CardDefaults.cardColors(
-
-            containerColor =
-                if (completed)
-                    Color(habit.color).copy(alpha = 0.08f)
-                else
-                    MaterialTheme.colorScheme.surface
+            containerColor = backgroundColor
         )
     ) {
-
         Row(
             modifier = Modifier
                 .padding(
@@ -141,15 +108,12 @@ fun HabitCard(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.Top
         ) {
-
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Text(
                         text = habit.icon,
                         style = MaterialTheme.typography.headlineSmall
@@ -162,27 +126,53 @@ fun HabitCard(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
-
                 }
-
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 12.dp),
-
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    when (habit.habitType.uppercase()) {
+                        "TIME" -> {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = "Затраченное время",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
 
-                    Icon(
-                        imageVector = Icons.Default.Schedule,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                            Spacer(Modifier.width(6.dp))
 
-                    Spacer(Modifier.width(6.dp))
+                            Text("${habit.minutesSpent} мин")
+                        }
 
-                    Text("${habit.minutesSpent} мин")
+                        "COUNTER" -> {
+                            Text(
+                                text = "Количество: ${habit.count}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+
+                        "CHECK" -> {
+                            // Для привычки с галочкой
+                            // дополнительное значение не отображается.
+                        }
+
+                        else -> {
+                            // Совместимость с неизвестными типами:
+                            // показываем время, как в старой версии.
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = "Затраченное время",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+
+                            Spacer(Modifier.width(6.dp))
+
+                            Text("${habit.minutesSpent} мин")
+                        }
+                    }
 
                     StatusIndicator(
                         completed = completed,
@@ -191,9 +181,9 @@ fun HabitCard(
                     )
 
                     Spacer(Modifier.weight(1f))
-
                 }
             }
+
             IconButton(
                 onClick = onMenuClick
             ) {
@@ -205,6 +195,7 @@ fun HabitCard(
         }
     }
 }
+
 @Composable
 private fun StatusIndicator(
     completed: Boolean,
@@ -212,54 +203,43 @@ private fun StatusIndicator(
     modifier: Modifier = Modifier
 ) {
     val statusScale by animateFloatAsState(
-
-        targetValue =
-            if (completed)
-                1.2f
-            else
-                1f,
-
+        targetValue = if (completed) 1.2f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy
         ),
-
         label = "StatusScale"
-
     )
 
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
-
         Text(
             text = if (completed) "⬤" else "◯",
-
             modifier = Modifier.graphicsLayer {
                 scaleX = statusScale
                 scaleY = statusScale
             },
-            color =
-                if (completed)
-                    color
-                else
-                    MaterialTheme.colorScheme.outline
+            color = if (completed) {
+                color
+            } else {
+                MaterialTheme.colorScheme.outline
+            }
         )
 
         Spacer(Modifier.width(6.dp))
 
         Text(
-            text =
-                if (completed)
-                    "Выполнено"
-                else
-                    "Не выполнено",
-
-            color =
-                if (completed)
-                    color
-                else
-                    MaterialTheme.colorScheme.onSurfaceVariant
+            text = if (completed) {
+                "Выполнено"
+            } else {
+                "Не выполнено"
+            },
+            color = if (completed) {
+                color
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
         )
     }
 }

@@ -38,11 +38,11 @@ fun HabitBottomSheet(
     var count by remember(habit.id) {
         mutableStateOf(habit.count.toString())
     }
-
+    val habitType = habit.habitType.uppercase()
     val habitColor = Color(habit.color)
     val colorScheme = MaterialTheme.colorScheme
 
-    val typeLabel = when (habit.habitType) {
+    val typeLabel = when (habitType) {
         "CHECK" -> "Выполнение"
         "COUNTER" -> "Количество"
         else -> "Время"
@@ -119,7 +119,7 @@ fun HabitBottomSheet(
 
             Spacer(Modifier.height(24.dp))
 
-            when (habit.habitType) {
+            when (habitType) {
                 "CHECK" -> {
                     Row(
                         modifier = Modifier

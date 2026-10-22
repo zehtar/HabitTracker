@@ -140,16 +140,31 @@ private fun CalendarHabitRow(
                 fontWeight = FontWeight.Medium
             )
 
-            if (habit.minutesSpent > 0) {
-                Text(
-                    text = "${habit.minutesSpent} мин",
-                    style = MaterialTheme.typography.bodySmall,
-                    color =
-                        MaterialTheme
+
+            when (habit.habitType.uppercase()) {
+                "TIME" -> {
+                    if (habit.minutesSpent > 0) {
+                        Text(
+                            text = "${habit.minutesSpent} мин",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme
+                                .colorScheme
+                                .onSurfaceVariant
+                        )
+                    }
+                }
+
+                "COUNTER" -> {
+                    Text(
+                        text = "Количество: ${habit.count}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme
                             .colorScheme
                             .onSurfaceVariant
-                )
+                    )
+                }
             }
+
         }
 
         Text(

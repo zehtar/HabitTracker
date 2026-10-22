@@ -188,6 +188,17 @@ fun FullStatisticsScreen(
                     modifier = Modifier.weight(1f)
                 )
             }
+
+            Spacer(
+                modifier = Modifier.height(10.dp)
+            )
+
+            StatisticsValue(
+                value = overall.totalCount.toString(),
+                label = "Количество",
+                modifier = Modifier.fillMaxWidth()
+            )
+
         }
 
         Spacer(
@@ -767,43 +778,56 @@ fun HabitStatisticsCard(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            StatisticsValue(
-                value = "${statistics.completionPercent}%",
-                label = "Выполнение",
-                modifier = Modifier.weight(1f)
-            )
+        when (statistics.habitType.uppercase()) {
+            "TIME" -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    StatisticsValue(
+                        value = formatMinutes(statistics.totalMinutes),
+                        label = "Общее время",
+                        modifier = Modifier.weight(1f)
+                    )
 
-            StatisticsValue(
-                value = "${statistics.averageMinutesPerCompletion} мин",
-                label = "Среднее время",
-                modifier = Modifier.weight(1f)
-            )
+                    StatisticsValue(
+                        value = "${statistics.averageMinutesPerDay} мин",
+                        label = "В среднем в день",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            "COUNTER" -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    StatisticsValue(
+                        value = statistics.totalCount.toString(),
+                        label = "Всего",
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    StatisticsValue(
+                        value = statistics.averageCountPerDay.toString(),
+                        label = "В среднем в день",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(
+                    modifier = Modifier.height(10.dp)
+                )
+
+                StatisticsValue(
+                    value = statistics.averageCountPerCompletion.toString(),
+                    label = "В среднем за выполнение",
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            StatisticsValue(
-                value = formatMinutes(
-                    statistics.totalMinutes
-                ),
-                label = "Общее время",
-                modifier = Modifier.weight(1f)
-            )
-
-            StatisticsValue(
-                value = "${statistics.averageMinutesPerDay} мин",
-                label = "В среднем в день",
-                modifier = Modifier.weight(1f)
-            )
-        }
     }
 }
 

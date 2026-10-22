@@ -22,10 +22,12 @@ data class FullStatisticsUiModel(
 data class FullStatisticsOverallUiModel(
     val completed: Int = 0,
     val totalMinutes: Int = 0,
+    val totalCount: Int = 0,
     val completionPercent: Int = 0,
     val averageMinutesPerCompletion: Int = 0,
     val averageMinutesPerDay: Int = 0
 )
+
 
 data class FullStatisticsDayUiModel(
     val date: LocalDate,
@@ -51,11 +53,13 @@ data class MonthlyComparisonUiModel(
     val minutesChangePercent: Int = 0
 )
 
+
 data class HabitFullStatisticsUiModel(
     val habitId: Int,
     val name: String,
     val icon: String,
     val color: Long,
+    val habitType: String = "TIME",
 
     val currentStreak: Int = 0,
     val bestStreak: Int = 0,
@@ -65,8 +69,13 @@ data class HabitFullStatisticsUiModel(
 
     val totalMinutes: Int = 0,
     val averageMinutesPerCompletion: Int = 0,
-    val averageMinutesPerDay: Int = 0
+    val averageMinutesPerDay: Int = 0,
+
+    val totalCount: Int = 0,
+    val averageCountPerCompletion: Int = 0,
+    val averageCountPerDay: Int = 0
 )
+
 
 data class HabitCalendarDayUiModel(
     val date: LocalDate,

@@ -341,10 +341,10 @@ private fun HabitCard(
 
         /* ---------- NAME + MINUTES ---------- */
 
+
         Column(
             modifier = GlanceModifier.defaultWeight()
         ) {
-
             Text(
                 text = habit.name,
                 maxLines = 1,
@@ -355,18 +355,37 @@ private fun HabitCard(
                 )
             )
 
-            Spacer(
-                modifier = GlanceModifier.height(2.dp)
-            )
+            when (habit.habitType.uppercase()) {
+                "TIME" -> {
+                    Spacer(
+                        modifier = GlanceModifier.height(2.dp)
+                    )
 
-            Text(
-                text = "${habit.minutesSpent} мин",
-                style = TextStyle(
-                    color = secondaryText,
-                    fontSize = 13.sp
-                )
-            )
+                    Text(
+                        text = "${habit.minutesSpent} мин",
+                        style = TextStyle(
+                            color = secondaryText,
+                            fontSize = 13.sp
+                        )
+                    )
+                }
+
+                "COUNTER" -> {
+                    Spacer(
+                        modifier = GlanceModifier.height(2.dp)
+                    )
+
+                    Text(
+                        text = "Количество: ${habit.count}",
+                        style = TextStyle(
+                            color = secondaryText,
+                            fontSize = 13.sp
+                        )
+                    )
+                }
+            }
         }
+
 
         Spacer(
             modifier = GlanceModifier.width(8.dp)
@@ -477,14 +496,29 @@ private fun getTodayHabits(
                     it.habitId == habit.id
                 }
 
+
+            val habitType = habit.habitType.uppercase()
+            val minutesSpent = entry?.minutesSpent ?: 0
+            val count = entry?.count ?: 0
+
+            val completed = when (habitType) {
+                "CHECK" -> entry?.completed ?: false
+                "TIME" -> minutesSpent > 0
+                "COUNTER" -> count > 0
+                else -> entry?.completed ?: false
+            }
+
             HabitWidgetItem(
                 id = habit.id,
                 name = habit.name,
                 icon = habit.icon,
-                completed = entry?.completed ?: false,
-                minutesSpent = entry?.minutesSpent ?: 0,
+                completed = completed,
+                minutesSpent = minutesSpent,
+                count = count,
+                habitType = habitType,
                 color = habit.color
             )
+
         }
     }
 }

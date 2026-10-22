@@ -31,13 +31,17 @@ data class CalendarDayUiModel(
     val minutes: Int
 )
 
+
 data class CalendarDayHabitUiModel(
     val habitId: Int,
     val name: String,
     val icon: String,
     val color: Long,
-    val minutesSpent: Int
+    val habitType: String = "CHECK",
+    val minutesSpent: Int = 0,
+    val count: Int = 0
 )
+
 
 data class HabitTimeStatisticUiModel(
     val habitId: Int,

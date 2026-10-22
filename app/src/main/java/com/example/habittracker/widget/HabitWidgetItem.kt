@@ -1,3 +1,4 @@
+
 package com.example.habittracker.widget
 
 import androidx.glance.action.ActionParameters
@@ -8,6 +9,8 @@ data class HabitWidgetItem(
     val icon: String,
     val completed: Boolean,
     val minutesSpent: Int,
+    val count: Int,
+    val habitType: String,
     val color: Long
 )
 
