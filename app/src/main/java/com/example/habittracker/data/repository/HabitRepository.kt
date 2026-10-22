@@ -61,7 +61,6 @@ class HabitRepository(
     }
 
 
-
     suspend fun updateHabit(
         id: Int,
         name: String,
@@ -147,136 +146,111 @@ class HabitRepository(
         }
     }
 
-
     fun getStatistics(
         selectedDate: StateFlow<LocalDate>
     ): Flow<StatisticsUiModel> {
-
         return combine(
             habitDao.getAllHabits(),
             habitEntryDao.getAllEntries(),
             selectedDate
         ) { habits, entries, date ->
 
-            val weekStart =
-                date.with(DayOfWeek.MONDAY)
+            val habitsById = habits.associateBy { it.id }
+            val weekStart = date.with(DayOfWeek.MONDAY)
+            val selectedDateString = date.toString()
 
-            val weekEnd =
-                weekStart.plusDays(6)
+            fun isCompleted(entry: HabitEntryEntity): Boolean {
+                val habit = habitsById[entry.habitId] ?: return false
 
-            val selectedDateString =
-                date.toString()
-
-            val totalHabits =
-                habits.size
-
-            val completedToday =
-                entries.count {
-                    it.date == selectedDateString &&
-                            it.completed
+                return when (habit.habitType) {
+                    "CHECK" -> entry.completed
+                    "TIME" -> entry.minutesSpent > 0
+                    "COUNTER" -> entry.count > 0
+                    else -> entry.completed
                 }
+            }
 
-            val todayMinutes =
-                entries
-                    .filter {
-                        it.date == selectedDateString
+            fun minutesFor(entriesForPeriod: List<HabitEntryEntity>): Int {
+                return entriesForPeriod.sumOf { entry ->
+                    if (habitsById[entry.habitId]?.habitType == "TIME") {
+                        entry.minutesSpent.coerceAtLeast(0)
+                    } else {
+                        0
                     }
-                    .sumOf {
-                        it.minutesSpent
-                    }
+                }
+            }
 
-            val weekEntries =
-                entries.filter {
+            val todayEntries = entries.filter {
+                it.date == selectedDateString &&
+                        habitsById.containsKey(it.habitId)
+            }
 
-                    val entryDate =
-                        LocalDate.parse(it.date)
+            val completedToday = todayEntries.count(::isCompleted)
+            val todayMinutes = minutesFor(todayEntries)
 
-                    !entryDate.isBefore(weekStart) &&
-                            !entryDate.isAfter(weekEnd)
+            val totalHabits = habits.size
+
+            val weekEntries = entries.filter { entry ->
+                val entryDate = runCatching {
+                    LocalDate.parse(entry.date)
+                }.getOrNull()
+
+                entryDate != null &&
+                        !entryDate.isBefore(weekStart) &&
+                        !entryDate.isAfter(weekStart.plusDays(6)) &&
+                        habitsById.containsKey(entry.habitId)
+            }
+
+            val completedWeek = weekEntries.count(::isCompleted)
+            val weekMinutes = minutesFor(weekEntries)
+
+            val completionPercent = if (totalHabits == 0) {
+                0
+            } else {
+                completedToday * 100 / totalHabits
+            }
+
+            val dailyStatistics = (0..6).map { dayOffset ->
+                val currentDate = weekStart.plusDays(dayOffset.toLong())
+                val currentDateString = currentDate.toString()
+
+                val dayEntries = entries.filter { entry ->
+                    entry.date == currentDateString &&
+                            habitsById.containsKey(entry.habitId)
                 }
 
-            val completedWeek =
-                weekEntries.count {
-                    it.completed
-                }
+                val completed = dayEntries.count(::isCompleted)
 
-            val weekMinutes =
-                weekEntries.sumOf {
-                    it.minutesSpent
-                }
-
-            val completionPercent =
-                if (totalHabits == 0) {
+                val percent = if (totalHabits == 0) {
                     0
                 } else {
-                    completedToday * 100 / totalHabits
+                    completed * 100 / totalHabits
                 }
 
-            val averageMinutesPerDay =
-                weekMinutes / 7
-
-            val dailyStatistics =
-                (0..6).map { dayOffset ->
-
-                    val currentDate =
-                        weekStart.plusDays(dayOffset.toLong())
-
-                    val currentDateString =
-                        currentDate.toString()
-
-                    val completed =
-                        entries.count {
-                            it.date == currentDateString &&
-                                    it.completed
-                        }
-
-                    val percent =
-                        if (totalHabits == 0) {
-                            0
-                        } else {
-                            completed * 100 / totalHabits
-                        }
-
-                    val minutes =
-                        entries
-                            .filter {
-                                it.date == currentDateString
-                            }
-                            .sumOf {
-                                it.minutesSpent
-                            }
-
-                    DailyStatisticUiModel(
-                        date = currentDate,
-                        completed = completed,
-                        total = totalHabits,
-                        completionPercent = percent,
-                        minutes = minutes
-                    )
-                }
+                DailyStatisticUiModel(
+                    date = currentDate,
+                    completed = completed,
+                    total = totalHabits,
+                    completionPercent = percent,
+                    minutes = minutesFor(dayEntries)
+                )
+            }
 
             StatisticsUiModel(
-
                 selectedDate = date,
-
                 completedToday = completedToday,
-
                 totalHabits = totalHabits,
-
                 completedWeek = completedWeek,
-
                 totalMinutesToday = todayMinutes,
-
                 totalMinutesWeek = weekMinutes,
-
                 completionPercent = completionPercent,
-
-                averageMinutesPerDay = averageMinutesPerDay,
-
+                averageMinutesPerDay = weekMinutes / 7,
                 dailyStatistics = dailyStatistics
             )
         }
     }
+
+
     fun getCalendarDayDetails(
         selectedDate: Flow<LocalDate>
     ): Flow<List<CalendarDayHabitUiModel>> {
@@ -286,30 +260,43 @@ class HabitRepository(
             selectedDate
         ) { habits, entries, date ->
 
+            val habitsById = habits.associateBy { it.id }
             val dateString = date.toString()
 
             entries
-                .filter {
-                    it.date == dateString &&
-                            it.completed
+                .filter { entry ->
+                    if (entry.date != dateString) {
+                        return@filter false
+                    }
+
+                    val habit = habitsById[entry.habitId]
+                        ?: return@filter false
+
+                    when (habit.habitType) {
+                        "CHECK" -> entry.completed
+                        "TIME" -> entry.minutesSpent > 0
+                        "COUNTER" -> entry.count > 0
+                        else -> entry.completed
+                    }
                 }
                 .mapNotNull { entry ->
-
-                    habits.find {
-                        it.id == entry.habitId
-                    }?.let { habit ->
-
+                    habitsById[entry.habitId]?.let { habit ->
                         CalendarDayHabitUiModel(
                             habitId = habit.id,
                             name = habit.name,
                             icon = habit.icon,
                             color = habit.color,
-                            minutesSpent = entry.minutesSpent
+                            minutesSpent = if (habit.habitType == "TIME") {
+                                entry.minutesSpent.coerceAtLeast(0)
+                            } else {
+                                0
+                            }
                         )
                     }
                 }
         }
     }
+
     fun getCalendarStatistics(
         month: StateFlow<LocalDate>
     ): Flow<List<CalendarDayUiModel>> {
@@ -319,33 +306,42 @@ class HabitRepository(
             month
         ) { habits, entries, selectedMonth ->
 
+            val habitsById = habits.associateBy { it.id }
             val totalHabits = habits.size
 
             (1..selectedMonth.lengthOfMonth()).map { day ->
-
-                val date =
-                    selectedMonth.withDayOfMonth(day)
-
+                val date = selectedMonth.withDayOfMonth(day)
                 val dateString = date.toString()
 
-                val dayEntries = entries.filter {
-                    it.date == dateString
+                val dayEntries = entries.filter { entry ->
+                    entry.date == dateString &&
+                            habitsById.containsKey(entry.habitId)
                 }
 
-                val completed = dayEntries.count {
-                    it.completed
-                }
+                val completed = dayEntries.count { entry ->
+                    val habit = habitsById[entry.habitId]
 
-                val minutes = dayEntries.sumOf {
-                    it.minutesSpent
-                }
-
-                val completionPercent =
-                    if (totalHabits == 0) {
-                        0
-                    } else {
-                        completed * 100 / totalHabits
+                    when (habit?.habitType) {
+                        "CHECK" -> entry.completed
+                        "TIME" -> entry.minutesSpent > 0
+                        "COUNTER" -> entry.count > 0
+                        else -> entry.completed
                     }
+                }
+
+                val minutes = dayEntries.sumOf { entry ->
+                    if (habitsById[entry.habitId]?.habitType == "TIME") {
+                        entry.minutesSpent.coerceAtLeast(0)
+                    } else {
+                        0
+                    }
+                }
+
+                val completionPercent = if (totalHabits == 0) {
+                    0
+                } else {
+                    completed * 100 / totalHabits
+                }
 
                 CalendarDayUiModel(
                     date = date,
@@ -358,6 +354,7 @@ class HabitRepository(
         }
     }
 
+
     fun getHabitTimeForWeek(
         weekStart: Flow<LocalDate>
     ): Flow<List<HabitTimeStatisticUiModel>> {
@@ -369,36 +366,39 @@ class HabitRepository(
 
             val weekEnd = startDate.plusDays(6)
 
-            habits.mapNotNull { habit ->
+            habits
+                .filter { it.habitType == "TIME" }
+                .mapNotNull { habit ->
 
-                val minutes = entries
-                    .filter { entry ->
-                        entry.habitId == habit.id &&
-                                runCatching {
-                                    val date = LocalDate.parse(entry.date)
+                    val minutes = entries
+                        .filter { entry ->
+                            entry.habitId == habit.id &&
+                                    runCatching {
+                                        val date = LocalDate.parse(entry.date)
 
-                                    !date.isBefore(startDate) &&
-                                            !date.isAfter(weekEnd)
-                                }.getOrDefault(false)
+                                        !date.isBefore(startDate) &&
+                                                !date.isAfter(weekEnd)
+                                    }.getOrDefault(false)
+                        }
+                        .sumOf { it.minutesSpent.coerceAtLeast(0) }
+
+                    if (minutes > 0) {
+                        HabitTimeStatisticUiModel(
+                            habitId = habit.id,
+                            name = habit.name,
+                            icon = habit.icon,
+                            color = habit.color,
+                            minutes = minutes
+                        )
+                    } else {
+                        null
                     }
-                    .sumOf { it.minutesSpent }
-
-                if (minutes > 0) {
-                    HabitTimeStatisticUiModel(
-                        habitId = habit.id,
-                        name = habit.name,
-                        icon = habit.icon,
-                        color = habit.color,
-                        minutes = minutes
-                    )
-                } else {
-                    null
                 }
-            }.sortedByDescending {
-                it.minutes
-            }
+                .sortedByDescending { it.minutes }
         }
     }
+
+
     fun getHabitTimeForMonth(
         month: Flow<LocalDate>
     ): Flow<List<HabitTimeStatisticUiModel>> {
@@ -408,44 +408,44 @@ class HabitRepository(
             month
         ) { habits, entries, selectedMonth ->
 
-            val firstDay =
-                selectedMonth.withDayOfMonth(1)
+            val firstDay = selectedMonth.withDayOfMonth(1)
 
-            val lastDay =
-                selectedMonth.withDayOfMonth(
-                    selectedMonth.lengthOfMonth()
-                )
+            val lastDay = selectedMonth.withDayOfMonth(
+                selectedMonth.lengthOfMonth()
+            )
 
-            habits.mapNotNull { habit ->
+            habits
+                .filter { it.habitType == "TIME" }
+                .mapNotNull { habit ->
 
-                val minutes = entries
-                    .filter { entry ->
-                        entry.habitId == habit.id &&
-                                runCatching {
-                                    val date = LocalDate.parse(entry.date)
+                    val minutes = entries
+                        .filter { entry ->
+                            entry.habitId == habit.id &&
+                                    runCatching {
+                                        val date = LocalDate.parse(entry.date)
 
-                                    !date.isBefore(firstDay) &&
-                                            !date.isAfter(lastDay)
-                                }.getOrDefault(false)
+                                        !date.isBefore(firstDay) &&
+                                                !date.isAfter(lastDay)
+                                    }.getOrDefault(false)
+                        }
+                        .sumOf { it.minutesSpent.coerceAtLeast(0) }
+
+                    if (minutes > 0) {
+                        HabitTimeStatisticUiModel(
+                            habitId = habit.id,
+                            name = habit.name,
+                            icon = habit.icon,
+                            color = habit.color,
+                            minutes = minutes
+                        )
+                    } else {
+                        null
                     }
-                    .sumOf { it.minutesSpent }
-
-                if (minutes > 0) {
-                    HabitTimeStatisticUiModel(
-                        habitId = habit.id,
-                        name = habit.name,
-                        icon = habit.icon,
-                        color = habit.color,
-                        minutes = minutes
-                    )
-                } else {
-                    null
                 }
-            }.sortedByDescending {
-                it.minutes
-            }
+                .sortedByDescending { it.minutes }
         }
     }
+
     fun getRemindersForHabit(
         habitId: Int
     ): Flow<List<HabitReminderEntity>> {
@@ -489,9 +489,11 @@ class HabitRepository(
     fun getAllHabits(): Flow<List<HabitEntity>> {
         return habitDao.getAllHabits()
     }
+
     fun getAllReminders(): Flow<List<HabitReminderEntity>> {
         return habitReminderDao.getAllReminders()
     }
+
 
     fun getFullStatistics(
         period: Flow<FullStatisticsPeriod>,
@@ -506,67 +508,70 @@ class HabitRepository(
         ) { habits, entries, selectedPeriod, habitId ->
 
             val today = LocalDate.now()
+            val habitsById = habits.associateBy { it.id }
+
+            fun isCompleted(entry: HabitEntryEntity): Boolean {
+                val habit = habitsById[entry.habitId] ?: return false
+
+                return when (habit.habitType) {
+                    "CHECK" -> entry.completed
+                    "TIME" -> entry.minutesSpent > 0
+                    "COUNTER" -> entry.count > 0
+                    else -> entry.completed
+                }
+            }
+
+            fun getMinutes(entry: HabitEntryEntity): Int {
+                return if (habitsById[entry.habitId]?.habitType == "TIME") {
+                    entry.minutesSpent.coerceAtLeast(0)
+                } else {
+                    0
+                }
+            }
 
             val validEntries = entries.mapNotNull { entry ->
-                runCatching {
-                    entry to LocalDate.parse(entry.date)
-                }.getOrNull()
+                if (!habitsById.containsKey(entry.habitId)) {
+                    null
+                } else {
+                    runCatching {
+                        entry to LocalDate.parse(entry.date)
+                    }.getOrNull()
+                }
             }
 
             fun getPeriodStart(): LocalDate {
                 return when (selectedPeriod) {
-
                     FullStatisticsPeriod.ALL_TIME -> {
-                        validEntries
-                            .minOfOrNull { it.second }
-                            ?: today
+                        validEntries.minOfOrNull { it.second } ?: today
                     }
 
-                    FullStatisticsPeriod.DAY -> {
-                        today
-                    }
+                    FullStatisticsPeriod.DAY -> today
 
-                    FullStatisticsPeriod.WEEK -> {
+                    FullStatisticsPeriod.WEEK ->
                         today.with(DayOfWeek.MONDAY)
-                    }
 
-                    FullStatisticsPeriod.MONTH -> {
+                    FullStatisticsPeriod.MONTH ->
                         today.withDayOfMonth(1)
-                    }
 
-                    FullStatisticsPeriod.YEAR -> {
+                    FullStatisticsPeriod.YEAR ->
                         today.withDayOfYear(1)
-                    }
                 }
             }
 
             fun getPeriodEnd(): LocalDate {
                 return when (selectedPeriod) {
+                    FullStatisticsPeriod.ALL_TIME -> today
 
-                    FullStatisticsPeriod.ALL_TIME -> {
-                        today
-                    }
+                    FullStatisticsPeriod.DAY -> today
 
-                    FullStatisticsPeriod.DAY -> {
-                        today
-                    }
+                    FullStatisticsPeriod.WEEK ->
+                        today.with(DayOfWeek.MONDAY).plusDays(6)
 
-                    FullStatisticsPeriod.WEEK -> {
-                        today.with(DayOfWeek.MONDAY)
-                            .plusDays(6)
-                    }
+                    FullStatisticsPeriod.MONTH ->
+                        today.withDayOfMonth(today.lengthOfMonth())
 
-                    FullStatisticsPeriod.MONTH -> {
-                        today.withDayOfMonth(
-                            today.lengthOfMonth()
-                        )
-                    }
-
-                    FullStatisticsPeriod.YEAR -> {
-                        today.withDayOfYear(
-                            today.lengthOfYear()
-                        )
-                    }
+                    FullStatisticsPeriod.YEAR ->
+                        today.withDayOfYear(today.lengthOfYear())
                 }
             }
 
@@ -583,29 +588,26 @@ class HabitRepository(
                     ).toInt() + 1
                 }
 
-            val periodEntries =
-                validEntries.filter { (_, date) ->
-                    !date.isBefore(periodStart) &&
-                            !date.isAfter(periodEnd)
-                }
+            val periodEntries = validEntries.filter { (_, date) ->
+                !date.isBefore(periodStart) && !date.isAfter(periodEnd)
+            }
 
-            val completed =
-                periodEntries
-                    .filter { (entry, _) ->
-                        entry.completed
-                    }
-                    .distinctBy { (entry, date) ->
-                        entry.habitId to date
-                    }
-                    .size
+            val completedEntries = periodEntries
+                .filter { (entry, _) -> isCompleted(entry) }
+                .distinctBy { (entry, date) -> entry.habitId to date }
 
-            val totalMinutes =
-                periodEntries.sumOf { (entry, _) ->
-                    entry.minutesSpent
-                }
+            val completed = completedEntries.size
 
-            val possibleCompletions =
-                habits.size * periodDays
+            val totalMinutes = periodEntries.sumOf { (entry, _) ->
+                getMinutes(entry)
+            }
+
+            val timeCompletions = completedEntries.count { (entry, _) ->
+                habitsById[entry.habitId]?.habitType == "TIME" &&
+                        entry.minutesSpent > 0
+            }
+
+            val possibleCompletions = habits.size * periodDays
 
             val completionPercent =
                 if (possibleCompletions == 0) {
@@ -615,10 +617,10 @@ class HabitRepository(
                 }
 
             val averageMinutesPerCompletion =
-                if (completed == 0) {
+                if (timeCompletions == 0) {
                     0
                 } else {
-                    totalMinutes / completed
+                    totalMinutes / timeCompletions
                 }
 
             val averageMinutesPerDay =
@@ -634,30 +636,20 @@ class HabitRepository(
                 } else {
                     (0 until periodDays).map { offset ->
 
-                        val date =
-                            periodStart.plusDays(
-                                offset.toLong()
-                            )
+                        val date = periodStart.plusDays(offset.toLong())
 
-                        val dayEntries =
-                            periodEntries.filter { (_, entryDate) ->
-                                entryDate == date
-                            }
+                        val dayEntries = periodEntries.filter { (_, entryDate) ->
+                            entryDate == date
+                        }
 
-                        val dayCompleted =
-                            dayEntries
-                                .filter { (entry, _) ->
-                                    entry.completed
-                                }
-                                .distinctBy { (entry, _) ->
-                                    entry.habitId
-                                }
-                                .size
+                        val dayCompleted = dayEntries
+                            .filter { (entry, _) -> isCompleted(entry) }
+                            .distinctBy { (entry, _) -> entry.habitId }
+                            .size
 
-                        val dayMinutes =
-                            dayEntries.sumOf { (entry, _) ->
-                                entry.minutesSpent
-                            }
+                        val dayMinutes = dayEntries.sumOf { (entry, _) ->
+                            getMinutes(entry)
+                        }
 
                         val dayCompletionPercent =
                             if (habits.isEmpty()) {
@@ -676,105 +668,70 @@ class HabitRepository(
                     }
                 }
 
-            val currentMonth =
-                today.withDayOfMonth(1)
-
-            val previousMonth =
-                currentMonth.minusMonths(1)
+            val currentMonth = today.withDayOfMonth(1)
+            val previousMonth = currentMonth.minusMonths(1)
 
             val currentMonthEnd =
-                currentMonth.withDayOfMonth(
-                    currentMonth.lengthOfMonth()
-                )
+                currentMonth.withDayOfMonth(currentMonth.lengthOfMonth())
 
             val previousMonthEnd =
-                previousMonth.withDayOfMonth(
-                    previousMonth.lengthOfMonth()
-                )
+                previousMonth.withDayOfMonth(previousMonth.lengthOfMonth())
 
-            val currentMonthEntries =
-                validEntries.filter { (_, date) ->
-                    !date.isBefore(currentMonth) &&
-                            !date.isAfter(currentMonthEnd)
-                }
+            val currentMonthEntries = validEntries.filter { (_, date) ->
+                !date.isBefore(currentMonth) && !date.isAfter(currentMonthEnd)
+            }
 
-            val previousMonthEntries =
-                validEntries.filter { (_, date) ->
-                    !date.isBefore(previousMonth) &&
-                            !date.isAfter(previousMonthEnd)
-                }
+            val previousMonthEntries = validEntries.filter { (_, date) ->
+                !date.isBefore(previousMonth) && !date.isAfter(previousMonthEnd)
+            }
 
-            val currentMonthCompleted =
-                currentMonthEntries.count { (entry, _) ->
-                    entry.completed
-                }
+            val currentMonthCompleted = currentMonthEntries
+                .filter { (entry, _) -> isCompleted(entry) }
+                .distinctBy { (entry, date) -> entry.habitId to date }
+                .size
 
-            val previousMonthCompleted =
-                previousMonthEntries.count { (entry, _) ->
-                    entry.completed
-                }
+            val previousMonthCompleted = previousMonthEntries
+                .filter { (entry, _) -> isCompleted(entry) }
+                .distinctBy { (entry, date) -> entry.habitId to date }
+                .size
 
-            val currentMonthMinutes =
-                currentMonthEntries.sumOf { (entry, _) ->
-                    entry.minutesSpent
-                }
+            val currentMonthMinutes = currentMonthEntries.sumOf { (entry, _) ->
+                getMinutes(entry)
+            }
 
-            val previousMonthMinutes =
-                previousMonthEntries.sumOf { (entry, _) ->
-                    entry.minutesSpent
-                }
+            val previousMonthMinutes = previousMonthEntries.sumOf { (entry, _) ->
+                getMinutes(entry)
+            }
 
             fun calculateChangePercent(
                 oldValue: Int,
                 newValue: Int
             ): Int {
                 if (oldValue == 0) {
-                    return if (newValue == 0) {
-                        0
-                    } else {
-                        100
-                    }
+                    return if (newValue == 0) 0 else 100
                 }
 
                 return (newValue - oldValue) * 100 / oldValue
             }
 
-            val monthlyComparison =
-                MonthlyComparisonUiModel(
-
-                    currentMonth = currentMonth,
-
-                    previousMonth = previousMonth,
-
-                    currentCompleted =
-                        currentMonthCompleted,
-
-                    previousCompleted =
-                        previousMonthCompleted,
-
-                    currentMinutes =
-                        currentMonthMinutes,
-
-                    previousMinutes =
-                        previousMonthMinutes,
-
-                    completedChangePercent =
-                        calculateChangePercent(
-                            previousMonthCompleted,
-                            currentMonthCompleted
-                        ),
-
-                    minutesChangePercent =
-                        calculateChangePercent(
-                            previousMonthMinutes,
-                            currentMonthMinutes
-                        )
+            val monthlyComparison = MonthlyComparisonUiModel(
+                currentMonth = currentMonth,
+                previousMonth = previousMonth,
+                currentCompleted = currentMonthCompleted,
+                previousCompleted = previousMonthCompleted,
+                currentMinutes = currentMonthMinutes,
+                previousMinutes = previousMonthMinutes,
+                completedChangePercent = calculateChangePercent(
+                    previousMonthCompleted,
+                    currentMonthCompleted
+                ),
+                minutesChangePercent = calculateChangePercent(
+                    previousMonthMinutes,
+                    currentMonthMinutes
                 )
+            )
 
-            val selectedHabit =
-                habits.find {
-                    it.id == habitId
-                }
+            val selectedHabit = habitsById[habitId]
 
             val selectedHabitEntries =
                 if (selectedHabit == null) {
@@ -785,41 +742,35 @@ class HabitRepository(
                     }
                 }
 
-            val selectedHabitPeriodEntries =
-                selectedHabitEntries.filter { (_, date) ->
-                    !date.isBefore(periodStart) &&
-                            !date.isAfter(periodEnd)
-                }
+            val selectedHabitPeriodEntries = selectedHabitEntries.filter { (_, date) ->
+                !date.isBefore(periodStart) && !date.isAfter(periodEnd)
+            }
 
-            val habitCompleted =
-                selectedHabitPeriodEntries
-                    .filter { (entry, _) ->
-                        entry.completed
-                    }
-                    .distinctBy { (_, date) ->
-                        date
-                    }
-                    .size
+            val habitCompleted = selectedHabitPeriodEntries
+                .filter { (entry, _) -> isCompleted(entry) }
+                .distinctBy { (_, date) -> date }
+                .size
 
-            val habitMinutes =
-                selectedHabitPeriodEntries.sumOf { (entry, _) ->
-                    entry.minutesSpent
-                }
+            val habitMinutes = selectedHabitPeriodEntries.sumOf { (entry, _) ->
+                getMinutes(entry)
+            }
 
             val habitCompletionPercent =
                 if (periodDays == 0) {
                     0
                 } else {
-                    (
-                            habitCompleted * 100 / periodDays
-                            ).coerceIn(0, 100)
+                    (habitCompleted * 100 / periodDays).coerceIn(0, 100)
                 }
 
+            val habitTimeCompletions = selectedHabitPeriodEntries.count { (entry, _) ->
+                selectedHabit?.habitType == "TIME" && entry.minutesSpent > 0
+            }
+
             val habitAverageMinutesPerCompletion =
-                if (habitCompleted == 0) {
+                if (habitTimeCompletions == 0) {
                     0
                 } else {
-                    habitMinutes / habitCompleted
+                    habitMinutes / habitTimeCompletions
                 }
 
             val habitAverageMinutesPerDay =
@@ -829,40 +780,27 @@ class HabitRepository(
                     habitMinutes / periodDays
                 }
 
-            val completedDates =
-                selectedHabitEntries
-                    .filter { (entry, _) ->
-                        entry.completed
-                    }
-                    .map { (_, date) ->
-                        date
-                    }
-                    .toSet()
+            val completedDates = selectedHabitEntries
+                .filter { (entry, _) -> isCompleted(entry) }
+                .map { (_, date) -> date }
+                .toSet()
 
             var currentStreak = 0
-
             var streakDate = today
 
             while (completedDates.contains(streakDate)) {
                 currentStreak++
-
-                streakDate =
-                    streakDate.minusDays(1)
+                streakDate = streakDate.minusDays(1)
             }
 
-            val sortedCompletedDates =
-                completedDates.sorted()
+            val sortedCompletedDates = completedDates.sorted()
 
             var bestStreak = 0
             var currentBestStreak = 0
             var previousDate: LocalDate? = null
 
             sortedCompletedDates.forEach { date ->
-
-                if (
-                    previousDate != null &&
-                    date == previousDate!!.plusDays(1)
-                ) {
+                if (previousDate != null && date == previousDate!!.plusDays(1)) {
                     currentBestStreak++
                 } else {
                     currentBestStreak = 1
@@ -875,96 +813,59 @@ class HabitRepository(
                 previousDate = date
             }
 
-            val habitStatistics =
-                selectedHabit?.let { habit ->
+            val habitStatistics = selectedHabit?.let { habit ->
+                HabitFullStatisticsUiModel(
+                    habitId = habit.id,
+                    name = habit.name,
+                    icon = habit.icon,
+                    color = habit.color,
+                    currentStreak = currentStreak,
+                    bestStreak = bestStreak,
+                    completed = habitCompleted,
+                    completionPercent = habitCompletionPercent,
+                    totalMinutes = habitMinutes,
+                    averageMinutesPerCompletion = habitAverageMinutesPerCompletion,
+                    averageMinutesPerDay = habitAverageMinutesPerDay
+                )
+            }
 
-                    HabitFullStatisticsUiModel(
-                        habitId = habit.id,
-                        name = habit.name,
-                        icon = habit.icon,
-                        color = habit.color,
+            val habitCalendar = selectedHabit?.let {
+                val firstDate = selectedHabitEntries
+                    .minOfOrNull { (_, date) -> date }
+                    ?: today
 
-                        currentStreak = currentStreak,
+                val daysCount = ChronoUnit.DAYS.between(firstDate, today)
+                    .toInt()
+                    .coerceAtLeast(0)
 
-                        bestStreak = bestStreak,
+                (0..daysCount).map { offset ->
+                    val date = firstDate.plusDays(offset.toLong())
 
-                        completed = habitCompleted,
+                    val entry = selectedHabitEntries
+                        .find { (_, entryDate) -> entryDate == date }
+                        ?.first
 
-                        completionPercent =
-                            habitCompletionPercent,
-
-                        totalMinutes = habitMinutes,
-
-                        averageMinutesPerCompletion =
-                            habitAverageMinutesPerCompletion,
-
-                        averageMinutesPerDay =
-                            habitAverageMinutesPerDay
+                    HabitCalendarDayUiModel(
+                        date = date,
+                        completed = entry?.let { isCompleted(it) } ?: false,
+                        minutes = entry?.let { getMinutes(it) } ?: 0
                     )
                 }
-
-            val habitCalendar =
-                selectedHabit?.let { habit ->
-
-                    val firstDate =
-                        selectedHabitEntries
-                            .minOfOrNull { (_, date) ->
-                                date
-                            }
-                            ?: today
-
-                    val daysCount =
-                        java.time.temporal.ChronoUnit.DAYS
-                            .between(firstDate, today)
-                            .toInt()
-
-                    (0..daysCount).map { offset ->
-
-                        val date =
-                            firstDate.plusDays(
-                                offset.toLong()
-                            )
-
-                        val entry =
-                            selectedHabitEntries.find { (_, entryDate) ->
-                                entryDate == date
-                            }?.first
-
-                        HabitCalendarDayUiModel(
-                            date = date,
-                            completed =
-                                entry?.completed ?: false,
-                            minutes =
-                                entry?.minutesSpent ?: 0
-                        )
-                    }
-                } ?: emptyList()
+            } ?: emptyList()
 
             FullStatisticsUiModel(
-
                 period = selectedPeriod,
-
-                overall =
-                    FullStatisticsOverallUiModel(
-                        completed = completed,
-                        totalMinutes = totalMinutes,
-                        completionPercent = completionPercent,
-                        averageMinutesPerCompletion =
-                            averageMinutesPerCompletion,
-                        averageMinutesPerDay =
-                            averageMinutesPerDay
-                    ),
-
+                overall = FullStatisticsOverallUiModel(
+                    completed = completed,
+                    totalMinutes = totalMinutes,
+                    completionPercent = completionPercent,
+                    averageMinutesPerCompletion = averageMinutesPerCompletion,
+                    averageMinutesPerDay = averageMinutesPerDay
+                ),
                 activity = activity,
-
-                monthlyComparison =
-                    monthlyComparison,
-
-                selectedHabit =
-                    habitStatistics,
-
-                habitCalendar =
-                    habitCalendar
+                monthlyComparison = monthlyComparison,
+                selectedHabit = habitStatistics,
+                habitCalendar = habitCalendar
             )
         }
     }
