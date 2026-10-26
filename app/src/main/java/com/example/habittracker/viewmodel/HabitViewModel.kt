@@ -135,13 +135,16 @@ class HabitViewModel(
         repository.getHabitTimeForMonth(
             calendarMonth
         )
+
     fun updateHabit(
         id: Int,
         name: String,
         icon: String,
         color: Long,
         habitType: String,
-        guideline: String?
+        guideline: String?,
+        category: String?,
+        priority: String
     ) {
         viewModelScope.launch {
             repository.updateHabit(
@@ -150,7 +153,9 @@ class HabitViewModel(
                 icon = icon,
                 color = color,
                 habitType = habitType,
-                guideline = guideline
+                guideline = guideline,
+                category = category,
+                priority = priority
             )
         }
     }
@@ -160,7 +165,9 @@ class HabitViewModel(
         icon: String,
         color: Long,
         habitType: String,
-        guideline: String?
+        guideline: String?,
+        category: String?,
+        priority: String
     ) {
         viewModelScope.launch {
             repository.addHabit(
@@ -168,7 +175,9 @@ class HabitViewModel(
                 icon = icon,
                 color = color,
                 habitType = habitType,
-                guideline = guideline
+                guideline = guideline,
+                category = category,
+                priority = priority
             )
         }
     }

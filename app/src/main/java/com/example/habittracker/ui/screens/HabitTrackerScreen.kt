@@ -205,14 +205,24 @@ fun HabitTrackerScreen(
                         showDialog = false
                     },
 
-                    onConfirm = { name, icon, color, habitType, guideline ->
+                    onConfirm = {
+                            name,
+                            icon,
+                            color,
+                            habitType,
+                            guideline,
+                            category,
+                            priority
+                        ->
                         if (selectedHabit == null) {
                             viewModel.addHabit(
                                 name = name,
                                 icon = icon,
                                 color = color,
                                 habitType = habitType,
-                                guideline = guideline
+                                guideline = guideline,
+                                category = category,
+                                priority = priority
                             )
                         } else {
                             viewModel.updateHabit(
@@ -221,7 +231,9 @@ fun HabitTrackerScreen(
                                 icon = icon,
                                 color = color,
                                 habitType = habitType,
-                                guideline = guideline
+                                guideline = guideline,
+                                category = category,
+                                priority = priority
                             )
                         }
 

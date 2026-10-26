@@ -25,7 +25,15 @@ import com.example.habittracker.ui.model.HabitUiModel
 fun AddHabitDialog(
     habit: HabitUiModel? = null,
     onDismiss: () -> Unit,
-    onConfirm: (String, String, Long, String, String?) -> Unit,
+    onConfirm: (
+        String,
+        String,
+        Long,
+        String,
+        String?,
+        String?,
+        String
+    ) -> Unit,
     onDelete: () -> Unit = {}
 ) {
     var name by remember(habit?.id) {
@@ -43,6 +51,31 @@ fun AddHabitDialog(
     var guideline by remember(habit?.id) {
         mutableStateOf(habit?.guideline.orEmpty())
     }
+
+    var selectedCategory by remember(habit?.id) {
+        mutableStateOf(habit?.category)
+    }
+
+    var selectedPriority by remember(habit?.id) {
+        mutableStateOf(habit?.priority ?: "IMPORTANT")
+    }
+
+    val categories = listOf(
+        null to "Без категории",
+        "WORK_DEVELOPMENT" to "Работа и развитие",
+        "HEALTH" to "Здоровье",
+        "LEARNING" to "Обучение",
+        "HOBBY" to "Хобби",
+        "HOME_EVERYDAY" to "Быт",
+        "PERSONAL_DEVELOPMENT" to "Личное развитие"
+    )
+
+    val priorities = listOf(
+        "MANDATORY" to "Обязательная",
+        "IMPORTANT" to "Важная",
+        "ADDITIONAL" to "Дополнительная"
+    )
+
 
     val icons = listOf(
         "🎮", "📚", "🎨", "💪", "🇯🇵",
@@ -162,6 +195,83 @@ fun AddHabitDialog(
                         }
                     }
                 }
+
+                Text(
+                    text = "Категория",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                categories.forEach { (category, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable {
+                                selectedCategory = category
+                            }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedCategory == category,
+                            onClick = {
+                                selectedCategory = category
+                            },
+                            colors = RadioButtonDefaults.colors(
+                                selectedColor = habitColor
+                            )
+                        )
+
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                Text(
+                    text = "Приоритет",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                priorities.forEach { (priority, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable {
+                                selectedPriority = priority
+                            }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedPriority == priority,
+                            onClick = {
+                                selectedPriority = priority
+                            },
+                            colors = RadioButtonDefaults.colors(
+                                selectedColor = habitColor
+                            )
+                        )
+
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
 
                 Spacer(Modifier.height(16.dp))
 
@@ -305,8 +415,11 @@ fun AddHabitDialog(
                                     selectedIcon,
                                     selectedColor,
                                     selectedType,
-                                    guideline.trim().ifEmpty { null }
+                                    guideline.trim().ifEmpty { null },
+                                    selectedCategory,
+                                    selectedPriority
                                 )
+
                             }
                         },
                         enabled = name.isNotBlank(),

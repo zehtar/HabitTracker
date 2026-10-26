@@ -50,7 +50,9 @@ class HabitRepository(
                     minutesSpent = entry?.minutesSpent ?: 0,
                     habitType = habit.habitType,
                     guideline = habit.guideline,
-                    count = entry?.count ?: 0
+                    count = entry?.count ?: 0,
+                    category = habit.category,
+                    priority = habit.priority
                 )
             }
         }
@@ -61,13 +63,16 @@ class HabitRepository(
     }
 
 
+
     suspend fun updateHabit(
         id: Int,
         name: String,
         icon: String,
         color: Long,
         habitType: String,
-        guideline: String?
+        guideline: String?,
+        category: String?,
+        priority: String
     ) {
         val existingHabit = habitDao.getHabitById(id)
             ?: return
@@ -78,10 +83,14 @@ class HabitRepository(
                 icon = icon,
                 color = color,
                 habitType = habitType,
-                guideline = guideline
+                guideline = guideline,
+                category = category,
+                priority = priority
             )
         )
     }
+
+
 
 
     suspend fun addHabit(
@@ -89,7 +98,9 @@ class HabitRepository(
         icon: String,
         color: Long,
         habitType: String = "TIME",
-        guideline: String? = null
+        guideline: String? = null,
+        category: String? = null,
+        priority: String = "IMPORTANT"
     ) {
         habitDao.upsertHabit(
             HabitEntity(
@@ -97,10 +108,13 @@ class HabitRepository(
                 icon = icon,
                 color = color,
                 habitType = habitType,
-                guideline = guideline
+                guideline = guideline,
+                category = category,
+                priority = priority
             )
         )
     }
+
 
     suspend fun deleteHabit(id: Int) {
 

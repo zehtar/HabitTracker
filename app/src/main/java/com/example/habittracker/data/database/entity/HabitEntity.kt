@@ -20,5 +20,10 @@ data class HabitEntity(
     @ColumnInfo(defaultValue = "'TIME'")
     val habitType: String = "TIME",
 
-    val guideline: String? = null
+    val guideline: String? = null,
+
+    val category: String? = null,
+
+    @ColumnInfo(defaultValue = "'IMPORTANT'")
+    val priority: String = "IMPORTANT"
 )

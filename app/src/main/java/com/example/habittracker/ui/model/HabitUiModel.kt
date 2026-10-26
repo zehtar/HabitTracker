@@ -10,5 +10,7 @@ data class HabitUiModel(
     val minutesSpent: Int,
     val habitType: String = "TIME",
     val guideline: String? = null,
-    val count: Int = 0
+    val count: Int = 0,
+    val category: String? = null,
+    val priority: String = "IMPORTANT"
 )

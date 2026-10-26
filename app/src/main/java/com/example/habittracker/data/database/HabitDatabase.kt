@@ -18,7 +18,7 @@ import com.example.habittracker.data.database.entity.HabitReminderEntity
         HabitEntryEntity::class,
         HabitReminderEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class HabitDatabase : RoomDatabase() {
@@ -27,6 +27,26 @@ abstract class HabitDatabase : RoomDatabase() {
     abstract fun habitEntryDao(): HabitEntryDao
     abstract fun habitReminderDao(): HabitReminderDao
 }
+
+val MIGRATION_5_6 = object : Migration(5, 6) {
+
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            """
+            ALTER TABLE habits
+            ADD COLUMN category TEXT
+            """.trimIndent()
+        )
+
+        database.execSQL(
+            """
+            ALTER TABLE habits
+            ADD COLUMN priority TEXT NOT NULL DEFAULT 'IMPORTANT'
+            """.trimIndent()
+        )
+    }
+}
+
 
 val MIGRATION_4_5 = object : Migration(4, 5) {
 
