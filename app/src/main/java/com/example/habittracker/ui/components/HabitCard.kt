@@ -7,9 +7,11 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -27,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.habittracker.ui.model.HabitUiModel
 
@@ -119,12 +122,22 @@ fun HabitCard(
                         style = MaterialTheme.typography.headlineSmall
                     )
 
-                    Spacer(Modifier.width(10.dp))
+                    Spacer(Modifier.width(8.dp))
+
+                    CategoryPriorityIndicators(
+                        category = habit.category,
+                        priority = habit.priority
+                    )
+
+                    Spacer(Modifier.width(8.dp))
 
                     Text(
                         text = habit.name,
+                        modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -160,8 +173,6 @@ fun HabitCard(
                         }
 
                         else -> {
-                            // Совместимость с неизвестными типами:
-                            // показываем время, как в старой версии.
                             Icon(
                                 imageVector = Icons.Default.Schedule,
                                 contentDescription = "Затраченное время",
@@ -193,6 +204,70 @@ fun HabitCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CategoryPriorityIndicators(
+    category: String?,
+    priority: String
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        ColorIndicator(
+            color = categoryColor(category),
+            description = "Категория"
+        )
+
+        ColorIndicator(
+            color = priorityColor(priority),
+            description = "Приоритет"
+        )
+    }
+}
+
+@Composable
+private fun ColorIndicator(
+    color: Color,
+    description: String
+) {
+    Box(
+        modifier = Modifier
+            .size(9.dp)
+            .background(
+                color = color,
+                shape = CircleShape
+            )
+            .border(
+                width = 0.5.dp,
+                color = MaterialTheme.colorScheme.onSurface.copy(
+                    alpha = 0.18f
+                ),
+                shape = CircleShape
+            )
+    )
+}
+
+private fun categoryColor(category: String?): Color {
+    return when (category?.uppercase()) {
+        "WORK_DEVELOPMENT" -> Color(0xFF4285F4)
+        "HEALTH" -> Color(0xFF34A853)
+        "LEARNING" -> Color(0xFF9C27B0)
+        "HOBBY" -> Color(0xFF00A6A6)
+        "HOME_EVERYDAY" -> Color(0xFF8D6E63)
+        "PERSONAL_DEVELOPMENT" -> Color(0xFF29B6F6)
+        else -> Color(0xFF9E9E9E)
+    }
+}
+
+private fun priorityColor(priority: String): Color {
+    return when (priority.uppercase()) {
+        "MANDATORY" -> Color(0xFFE53935)
+        "IMPORTANT" -> Color(0xFFFF9800)
+        "ADDITIONAL" -> Color(0xFF9E9E9E)
+        else -> Color(0xFF9E9E9E)
     }
 }
 
