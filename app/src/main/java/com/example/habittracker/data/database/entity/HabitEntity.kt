@@ -25,5 +25,9 @@ data class HabitEntity(
     val category: String? = null,
 
     @ColumnInfo(defaultValue = "'IMPORTANT'")
-    val priority: String = "IMPORTANT"
+    val priority: String = "IMPORTANT",
+
+    @ColumnInfo(defaultValue = "NULL")
+    val streakResetDate: String? = null
+
 )

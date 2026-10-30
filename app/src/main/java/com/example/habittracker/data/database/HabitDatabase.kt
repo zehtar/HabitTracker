@@ -4,21 +4,17 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.example.habittracker.data.database.dao.HabitDao
-import com.example.habittracker.data.database.dao.HabitEntryDao
-import com.example.habittracker.data.database.dao.HabitReminderDao
-import com.example.habittracker.data.database.entity.HabitEntity
-import com.example.habittracker.data.database.entity.HabitEntryEntity
-import com.example.habittracker.data.database.entity.HabitReminderEntity
-
+import com.example.habittracker.data.database.dao.*
+import com.example.habittracker.data.database.entity.*
 
 @Database(
     entities = [
         HabitEntity::class,
         HabitEntryEntity::class,
-        HabitReminderEntity::class
+        HabitReminderEntity::class,
+        HabitPauseEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class HabitDatabase : RoomDatabase() {
@@ -26,8 +22,33 @@ abstract class HabitDatabase : RoomDatabase() {
     abstract fun habitDao(): HabitDao
     abstract fun habitEntryDao(): HabitEntryDao
     abstract fun habitReminderDao(): HabitReminderDao
-}
 
+    abstract fun habitPauseDao(): HabitPauseDao
+}
+val MIGRATION_6_7 = object : Migration(6, 7) {
+
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("""
+        ALTER TABLE habits
+        ADD COLUMN streakResetDate TEXT DEFAULT NULL
+    """)
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS habit_pauses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                habitId INTEGER NOT NULL,
+                startDate TEXT NOT NULL,
+                endDate TEXT
+            )
+        """)
+
+        database.execSQL("""
+            CREATE INDEX IF NOT EXISTS
+            index_habit_pauses_habitId_startDate
+            ON habit_pauses(habitId, startDate)
+        """)
+    }
+}
 val MIGRATION_5_6 = object : Migration(5, 6) {
 
     override fun migrate(database: SupportSQLiteDatabase) {

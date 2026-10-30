@@ -2,9 +2,7 @@ package com.example.habittracker.data.repository
 
 import androidx.room.withTransaction
 import com.example.habittracker.data.database.HabitDatabase
-import com.example.habittracker.data.database.entity.HabitEntity
-import com.example.habittracker.data.database.entity.HabitEntryEntity
-import com.example.habittracker.data.database.entity.HabitReminderEntity
+import com.example.habittracker.data.database.entity.*
 import com.example.habittracker.ui.model.*
 import java.time.LocalDate
 import kotlinx.coroutines.flow.*
@@ -19,6 +17,81 @@ class HabitRepository(
     private val habitEntryDao = database.habitEntryDao()
 
     private val habitReminderDao = database.habitReminderDao()
+
+    private val habitPauseDao = database.habitPauseDao()
+
+    suspend fun pauseHabit(
+        habitId: Int,
+        endDate: LocalDate? = null
+    ) {
+        val today = LocalDate.now()
+
+        require(endDate == null || !endDate.isBefore(today)) {
+            "Дата окончания паузы не может быть в прошлом"
+        }
+
+        val existingPause = habitPauseDao.getActivePause(
+            habitId = habitId,
+            date = today.toString()
+        )
+
+        if (existingPause != null) return
+
+        habitPauseDao.insertPause(
+            HabitPauseEntity(
+                habitId = habitId,
+                startDate = today.toString(),
+                endDate = endDate?.toString()
+            )
+        )
+    }
+
+    fun getPausesForHabit(
+        habitId: Int
+    ): Flow<List<HabitPauseEntity>> {
+        return habitPauseDao.observePausesForHabit(habitId)
+    }
+
+    suspend fun getActivePause(
+        habitId: Int
+    ): HabitPauseEntity? {
+        return habitPauseDao.getActivePause(
+            habitId = habitId,
+            date = LocalDate.now().toString()
+        )
+    }
+
+    suspend fun resumeHabit(habitId: Int) {
+        val today = LocalDate.now()
+
+        val activePause = habitPauseDao.getActivePause(
+            habitId = habitId,
+            date = today.toString()
+        ) ?: return
+
+        val startDate = LocalDate.parse(activePause.startDate)
+
+        if (startDate == today) {
+            // Если пауза началась сегодня, удаляем её.
+            habitPauseDao.deletePause(activePause.id)
+        } else {
+            // Завершаем паузу вчерашним днём.
+            habitPauseDao.finishPause(
+                pauseId = activePause.id,
+                endDate = today.minusDays(1).toString()
+            )
+        }
+    }
+
+    suspend fun resetHabitStreak(habitId: Int) {
+        val habit = habitDao.getHabitById(habitId) ?: return
+
+        habitDao.upsertHabit(
+            habit.copy(
+                streakResetDate = LocalDate.now().toString()
+            )
+        )
+    }
     fun getHabitsForDate(
         selectedDate: Flow<LocalDate>
     ): Flow<List<HabitUiModel>> {
@@ -62,8 +135,6 @@ class HabitRepository(
         habitEntryDao.upsertEntry(entry)
     }
 
-
-
     suspend fun updateHabit(
         id: Int,
         name: String,
@@ -90,9 +161,6 @@ class HabitRepository(
         )
     }
 
-
-
-
     suspend fun addHabit(
         name: String,
         icon: String,
@@ -115,17 +183,13 @@ class HabitRepository(
         )
     }
 
-
     suspend fun deleteHabit(id: Int) {
-
         database.withTransaction {
-
             habitEntryDao.deleteEntriesForHabit(id)
-
+            habitPauseDao.deletePausesForHabit(id)
             habitDao.deleteHabitById(id)
         }
     }
-
 
     suspend fun updateHabitEntry(
         habitId: Int,
@@ -535,9 +599,10 @@ class HabitRepository(
         return combine(
             habitDao.getAllHabits(),
             habitEntryDao.getAllEntries(),
+            habitPauseDao.getAllPauses(),
             period,
             selectedHabitId
-        ) { habits, entries, selectedPeriod, habitId ->
+        ) { habits, entries, pauses, selectedPeriod, habitId ->
 
             val today = LocalDate.now()
             val habitsById = habits.associateBy { it.id }
@@ -861,32 +926,89 @@ class HabitRepository(
                 .map { (_, date) -> date }
                 .toSet()
 
+            val selectedHabitPauses = if (selectedHabit != null) {
+                pauses.filter { it.habitId == selectedHabit.id }
+            } else {
+                emptyList()
+            }
+
+            fun isPaused(date: LocalDate): Boolean {
+                return selectedHabitPauses.any { pause ->
+
+                    val startDate = runCatching {
+                        LocalDate.parse(pause.startDate)
+                    }.getOrNull() ?: return@any false
+
+                    val endDate = pause.endDate?.let {
+                        runCatching {
+                            LocalDate.parse(it)
+                        }.getOrNull()
+                    }
+
+                    !date.isBefore(startDate) &&
+                            (endDate == null || !date.isAfter(endDate))
+                }
+            }
+
             var currentStreak = 0
             var streakDate = today
 
-            while (completedDates.contains(streakDate)) {
+            val streakResetDate = selectedHabit?.streakResetDate?.let {
+                runCatching {
+                    LocalDate.parse(it)
+                }.getOrNull()
+            }
+
+            while (
+                !streakDate.isBefore(
+                    streakResetDate ?: LocalDate.MIN
+                )
+            ) {
+
+                if (isPaused(streakDate)) {
+                    streakDate = streakDate.minusDays(1)
+                    continue
+                }
+
+                if (!completedDates.contains(streakDate)) {
+                    break
+                }
+
                 currentStreak++
+
+                if (streakDate == streakResetDate) {
+                    break
+                }
+
                 streakDate = streakDate.minusDays(1)
             }
 
-            val sortedCompletedDates = completedDates.sorted()
-
             var bestStreak = 0
             var currentBestStreak = 0
-            var previousDate: LocalDate? = null
 
-            sortedCompletedDates.forEach { date ->
-                if (previousDate != null && date == previousDate!!.plusDays(1)) {
-                    currentBestStreak++
-                } else {
-                    currentBestStreak = 1
+            val firstCompletedDate = completedDates.minOrNull()
+            val lastCompletedDate = completedDates.maxOrNull()
+
+            if (firstCompletedDate != null && lastCompletedDate != null) {
+
+                var date: LocalDate = firstCompletedDate
+
+                while (!date.isAfter(lastCompletedDate)) {
+
+                    if (isPaused(date)) {
+                        date = date.plusDays(1)
+                        continue
+                    }
+
+                    if (completedDates.contains(date)) {
+                        currentBestStreak++
+                        bestStreak = maxOf(bestStreak, currentBestStreak)
+                    } else {
+                        currentBestStreak = 0
+                    }
+
+                    date = date.plusDays(1)
                 }
-
-                if (currentBestStreak > bestStreak) {
-                    bestStreak = currentBestStreak
-                }
-
-                previousDate = date
             }
 
             val habitStatistics = selectedHabit?.let { habit ->
