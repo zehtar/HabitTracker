@@ -16,9 +16,10 @@ import com.example.habittracker.data.database.entity.*
         WeeklyPlanEntity::class,
         CategoryPlanEntity::class,
         CategoryPlanTargetEntity::class,
-        CategoryPlanHabitEntity::class
+        CategoryPlanHabitEntity::class,
+        WeeklyPlanEntryEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class HabitDatabase : RoomDatabase() {
@@ -32,6 +33,40 @@ abstract class HabitDatabase : RoomDatabase() {
     abstract fun categoryPlanDao(): CategoryPlanDao
     abstract fun categoryPlanTargetDao(): CategoryPlanTargetDao
     abstract fun categoryPlanHabitDao(): CategoryPlanHabitDao
+    abstract fun weeklyPlanEntryDao(): WeeklyPlanEntryDao
+}
+
+
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS weekly_plan_entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                weeklyPlanId INTEGER NOT NULL,
+                habitId INTEGER NOT NULL,
+                date TEXT NOT NULL,
+                habitType TEXT NOT NULL,
+                completed INTEGER NOT NULL,
+                minutesSpent INTEGER NOT NULL,
+                count INTEGER NOT NULL,
+                FOREIGN KEY(weeklyPlanId)
+                    REFERENCES weekly_plans(id)
+                    ON DELETE CASCADE
+            )
+        """.trimIndent())
+
+        database.execSQL("""
+            CREATE INDEX IF NOT EXISTS
+            index_weekly_plan_entries_weeklyPlanId
+            ON weekly_plan_entries(weeklyPlanId)
+        """.trimIndent())
+
+        database.execSQL("""
+            CREATE UNIQUE INDEX IF NOT EXISTS
+            index_weekly_plan_entries_weeklyPlanId_habitId_date
+            ON weekly_plan_entries(weeklyPlanId, habitId, date)
+        """.trimIndent())
+    }
 }
 
 val MIGRATION_7_8 = object : Migration(7, 8) {
