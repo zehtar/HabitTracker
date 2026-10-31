@@ -15,7 +15,10 @@ import java.time.LocalDate
 data class WeeklyPlanUiState(
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
+    val isApproving: Boolean = false,
     val details: WeeklyPlanDetails? = null,
+    val pendingReport: WeeklyPlanDetails? = null,
+    val isReportVisible: Boolean = false,
     val error: String? = null
 )
 
@@ -32,21 +35,23 @@ class WeeklyPlanViewModel(
         if (hasLoaded && !force) return
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                error = null
-            )
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             runCatching {
                 val monday = LocalDate.now().with(DayOfWeek.MONDAY)
                 val plan = repository.getOrCreateDraft(monday)
-                repository.getPlanDetails(plan.id)
+                val details = repository.getPlanDetails(plan.id)
                     ?: throw IllegalStateException("Не удалось загрузить план недели")
-            }.onSuccess { details ->
+                val pendingReport = repository.getPendingPreviousWeekReport()
+                Pair(details, pendingReport)
+            }.onSuccess { (details, pendingReport) ->
                 hasLoaded = true
-                _uiState.value = WeeklyPlanUiState(
+                _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    details = details
+                    details = details,
+                    pendingReport = pendingReport,
+                    isReportVisible = pendingReport != null,
+                    error = null
                 )
             }.onFailure { error ->
                 _uiState.value = _uiState.value.copy(
@@ -64,16 +69,10 @@ class WeeklyPlanViewModel(
         if (_uiState.value.isSaving) return
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isSaving = true,
-                error = null
-            )
+            _uiState.value = _uiState.value.copy(isSaving = true, error = null)
 
             runCatching {
-                repository.saveCategoryTargets(
-                    categoryPlanId = category.category.id,
-                    targets = targets
-                )
+                repository.saveCategoryTargets(category.category.id, targets)
                 val planId = _uiState.value.details?.plan?.id
                     ?: throw IllegalStateException("План недели не найден")
                 repository.getPlanDetails(planId)
@@ -88,6 +87,48 @@ class WeeklyPlanViewModel(
                 _uiState.value = _uiState.value.copy(
                     isSaving = false,
                     error = error.message ?: "Не удалось сохранить цели"
+                )
+            }
+        }
+    }
+
+    fun dismissReport() {
+        _uiState.value = _uiState.value.copy(isReportVisible = false)
+    }
+
+    fun showReportAgain() {
+        if (_uiState.value.pendingReport != null) {
+            _uiState.value = _uiState.value.copy(isReportVisible = true)
+        }
+    }
+
+    fun approveReport(note: String?, loadRating: String) {
+        val report = _uiState.value.pendingReport ?: return
+        if (_uiState.value.isApproving) return
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isApproving = true, error = null)
+
+            runCatching {
+                repository.approvePlan(
+                    weeklyPlanId = report.plan.id,
+                    note = note,
+                    loadRating = loadRating
+                )
+                val currentPlanId = _uiState.value.details?.plan?.id
+                currentPlanId?.let { repository.getPlanDetails(it) }
+            }.onSuccess { currentDetails ->
+                _uiState.value = _uiState.value.copy(
+                    isApproving = false,
+                    details = currentDetails ?: _uiState.value.details,
+                    pendingReport = null,
+                    isReportVisible = false,
+                    error = null
+                )
+            }.onFailure { error ->
+                _uiState.value = _uiState.value.copy(
+                    isApproving = false,
+                    error = error.message ?: "Не удалось утвердить итоги недели"
                 )
             }
         }
