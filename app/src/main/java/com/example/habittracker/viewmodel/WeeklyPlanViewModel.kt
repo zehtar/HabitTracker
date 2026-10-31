@@ -19,6 +19,7 @@ data class WeeklyPlanUiState(
     val details: WeeklyPlanDetails? = null,
     val pendingReport: WeeklyPlanDetails? = null,
     val isReportVisible: Boolean = false,
+    val isTestReport: Boolean = false,
     val error: String? = null
 )
 
@@ -51,6 +52,7 @@ class WeeklyPlanViewModel(
                     details = details,
                     pendingReport = pendingReport,
                     isReportVisible = pendingReport != null,
+                    isTestReport = false,
                     error = null
                 )
             }.onFailure { error ->
@@ -96,6 +98,39 @@ class WeeklyPlanViewModel(
         _uiState.value = _uiState.value.copy(isReportVisible = false)
     }
 
+    fun finishTestWeek() {
+        val currentPlan = _uiState.value.details ?: return
+        if (currentPlan.plan.status != WeeklyPlanRepository.DRAFT_STATUS) return
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isApproving = true, error = null)
+            runCatching {
+                repository.getPlanReport(currentPlan.plan.id)
+                    ?: throw IllegalStateException("Не удалось сформировать тестовый отчёт")
+            }.onSuccess { report ->
+                _uiState.value = _uiState.value.copy(
+                    isApproving = false,
+                    pendingReport = report,
+                    isReportVisible = true,
+                    isTestReport = true
+                )
+            }.onFailure { error ->
+                _uiState.value = _uiState.value.copy(
+                    isApproving = false,
+                    error = error.message ?: "Не удалось сформировать тестовый отчёт"
+                )
+            }
+        }
+    }
+
+    fun finishTestReport() {
+        _uiState.value = _uiState.value.copy(
+            isReportVisible = false,
+            pendingReport = null,
+            isTestReport = false
+        )
+    }
+
     fun showReportAgain() {
         if (_uiState.value.pendingReport != null) {
             _uiState.value = _uiState.value.copy(isReportVisible = true)
@@ -103,6 +138,10 @@ class WeeklyPlanViewModel(
     }
 
     fun approveReport(note: String?, loadRating: String) {
+        if (_uiState.value.isTestReport) {
+            finishTestReport()
+            return
+        }
         val report = _uiState.value.pendingReport ?: return
         if (_uiState.value.isApproving) return
 
