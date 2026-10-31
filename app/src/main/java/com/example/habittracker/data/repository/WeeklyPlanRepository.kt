@@ -9,6 +9,7 @@ import com.example.habittracker.data.database.entity.WeeklyPlanEntity
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.DayOfWeek
+import kotlinx.coroutines.flow.Flow
 
 data class WeeklyPlanTargetInput(
     val targetType: String,
@@ -133,6 +134,15 @@ class WeeklyPlanRepository(
         if (snapshots.isNotEmpty()) {
             weeklyPlanEntryDao.upsertEntries(snapshots)
         }
+    }
+
+    fun observeApprovedPlans(): Flow<List<WeeklyPlanEntity>> =
+        weeklyPlanDao.observeByStatus(APPROVED_STATUS)
+
+    suspend fun getApprovedPlanDetails(weeklyPlanId: Int): WeeklyPlanDetails? {
+        val plan = weeklyPlanDao.getById(weeklyPlanId) ?: return null
+        if (plan.status != APPROVED_STATUS) return null
+        return getPlanDetails(weeklyPlanId)
     }
 
     suspend fun getPlanDetails(weeklyPlanId: Int): WeeklyPlanDetails? {
