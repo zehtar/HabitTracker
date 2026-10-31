@@ -65,10 +65,10 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 
-private val PlanIndigo = Color(0xFF5968E8)
-private val PlanViolet = Color(0xFF8B75EE)
-private val PlanPale = Color(0xFFF0EFFF)
-private val PlanGreen = Color(0xFF25B879)
+private val PlanIndigo = Color(0xFFA5A0FF)
+private val PlanViolet = Color(0xFF786BD0)
+private val PlanPale = Color(0xFF35314F)
+private val PlanGreen = Color(0xFF69D6A2)
 
 @Composable
 fun WeeklyPlanScreen(onOpenHistory: () -> Unit) {
@@ -96,7 +96,7 @@ fun WeeklyPlanScreen(onOpenHistory: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F8FF))
+            .background(Color(0xFF17161F))
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(
@@ -108,12 +108,12 @@ fun WeeklyPlanScreen(onOpenHistory: () -> Unit) {
                     "Недельный план",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF20234D)
+                    color = Color(0xFFF1F0FA)
                 )
                 Text(
                     "${monday.format(dateFormatter)} — ${sunday.format(dateFormatter)}",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF777A9A)
+                    color = Color(0xFFAAA7C0)
                 )
             }
             Box(
@@ -137,7 +137,7 @@ fun WeeklyPlanScreen(onOpenHistory: () -> Unit) {
                 ) {
                     CircularProgressIndicator(color = PlanIndigo)
                     Spacer(Modifier.height(12.dp))
-                    Text("Загружаем план недели…", color = Color(0xFF777A9A))
+                    Text("Загружаем план недели…", color = Color(0xFFAAA7C0))
                 }
             }
 
@@ -165,7 +165,7 @@ fun WeeklyPlanScreen(onOpenHistory: () -> Unit) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(14.dp))
-                                    .background(Color(0xFFF0F0F8))
+                                    .background(Color(0xFF292733))
                                     .padding(horizontal = 14.dp, vertical = 11.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -178,7 +178,7 @@ fun WeeklyPlanScreen(onOpenHistory: () -> Unit) {
                                 Text(
                                     "Без категории: ${details.uncategorizedHabitCount}. Эти привычки пока не входят в план.",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF666987)
+                                    color = Color(0xFFB8B4CE)
                                 )
                             }
                         }
@@ -193,7 +193,7 @@ fun WeeklyPlanScreen(onOpenHistory: () -> Unit) {
                                 "Цели на неделю",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF25284F),
+                                color = Color(0xFFECEBFA),
                                 modifier = Modifier.weight(1f)
                             )
                             Text(
@@ -212,15 +212,15 @@ fun WeeklyPlanScreen(onOpenHistory: () -> Unit) {
                         item {
                             Card(
                                 shape = RoundedCornerShape(22.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF25232F)),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
                                 Column(Modifier.padding(20.dp)) {
-                                    Text("Пока нет категорий", fontWeight = FontWeight.Bold, color = Color(0xFF25284F))
+                                    Text("Пока нет категорий", fontWeight = FontWeight.Bold, color = Color(0xFFECEBFA))
                                     Spacer(Modifier.height(6.dp))
                                     Text(
                                         "Назначьте категорию хотя бы одной привычке на главном экране. После этого она появится здесь.",
-                                        color = Color(0xFF777A9A)
+                                        color = Color(0xFFAAA7C0)
                                     )
                                 }
                             }
@@ -277,7 +277,7 @@ private fun PlanHeroCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(26.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFF6878F3), Color(0xFF9582F0))))
+            .background(Brush.linearGradient(listOf(Color(0xFF514C91), Color(0xFF665AA8))))
             .padding(18.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -292,11 +292,11 @@ private fun PlanHeroCard(
                 Text(
                     if (isDraft) "Время задать ориентиры и распределить нагрузку" else "План утверждён и сохранён",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFE9E9FF)
+                    color = Color(0xFFE0DDF8)
                 )
             }
             Box(
-                modifier = Modifier.size(54.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.18f)),
+                modifier = Modifier.size(54.dp).clip(CircleShape).background(Color(0xFFBDB6FF).copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -376,12 +376,12 @@ private fun WeeklyPlanCategoryCard(
                         category.category.categoryName,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF25284F)
+                        color = Color(0xFFECEBFA)
                     )
                     Text(
                         "${category.habits.size} привычек",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF8587A4)
+                        color = Color(0xFF9693AD)
                     )
                 }
                 if (editable) {
@@ -399,29 +399,29 @@ private fun WeeklyPlanCategoryCard(
             Text(
                 category.habits.joinToString { it.habitName },
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF777A9A)
+                color = Color(0xFFAAA7C0)
             )
 
             if (category.targets.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(13.dp))
-                        .background(Color(0xFFF5F5FB)).padding(12.dp)
+                        .background(Color(0xFF302E3C)).padding(12.dp)
                 ) {
-                    Text("Цели на неделю пока не заданы", color = Color(0xFF8587A4), style = MaterialTheme.typography.bodySmall)
+                    Text("Цели на неделю пока не заданы", color = Color(0xFF9693AD), style = MaterialTheme.typography.bodySmall)
                 }
             } else {
                 category.targets.forEach { target ->
                     Row(
                         modifier = Modifier.fillMaxWidth()
                             .clip(RoundedCornerShape(13.dp))
-                            .background(Color(0xFFF7F7FD))
+                            .background(Color(0xFF2B2936))
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             targetTypeLabel(target.targetType),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF626584),
+                            color = Color(0xFFB8B4CE),
                             modifier = Modifier.weight(1f)
                         )
                         Text(
@@ -461,10 +461,10 @@ private fun CategoryGlyph(name: String) {
         else -> "●"
     }
     val tint = when {
-        "здоров" in normalized -> Color(0xFFE96B91)
-        "работ" in normalized || "развити" in normalized -> Color(0xFF5378E8)
-        "обуч" in normalized || "учёб" in normalized || "учеб" in normalized -> Color(0xFF8A70D8)
-        else -> Color(0xFF5A9E9A)
+        "здоров" in normalized -> Color(0xFFFF8EAF)
+        "работ" in normalized || "развити" in normalized -> Color(0xFF8FA8FF)
+        "обуч" in normalized || "учёб" in normalized || "учеб" in normalized -> Color(0xFFB7A1FF)
+        else -> Color(0xFF82C9C1)
     }
     Box(
         modifier = Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(tint.copy(alpha = 0.12f)),
@@ -517,11 +517,11 @@ private fun WeeklyPlanTargetDialog(
                 Text(
                     "Задайте ориентиры на всю неделю. Поле можно оставить пустым, если этот тип цели не нужен.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF777A9A)
+                    color = Color(0xFFAAA7C0)
                 )
                 availableTypes.forEach { type ->
                     Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Text(targetTypeLabel(type), fontWeight = FontWeight.SemiBold, color = Color(0xFF34375F))
+                        Text(targetTypeLabel(type), fontWeight = FontWeight.SemiBold, color = Color(0xFFE0DDF4))
                         OutlinedTextField(
                             value = values[type].orEmpty(),
                             onValueChange = {
@@ -647,7 +647,7 @@ private fun WeeklyPlanReportDialog(
                 modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(13.dp)
             ) {
-                Text("${start.format(formatter)} — ${end.format(formatter)}", color = Color(0xFF777A9A))
+                Text("${start.format(formatter)} — ${end.format(formatter)}", color = Color(0xFFAAA7C0))
                 Card(
                     shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = PlanPale)
@@ -657,17 +657,17 @@ private fun WeeklyPlanReportDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
-                            modifier = Modifier.size(58.dp).clip(CircleShape).background(Color.White),
+                            modifier = Modifier.size(58.dp).clip(CircleShape).background(Color(0xFF25232F)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("$overallPercent%", color = PlanIndigo, fontWeight = FontWeight.Bold)
                         }
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text("Общий прогресс", fontWeight = FontWeight.Bold, color = Color(0xFF25284F))
+                            Text("Общий прогресс", fontWeight = FontWeight.Bold, color = Color(0xFFECEBFA))
                             Text(
                                 if (targetCount == 0) "Цели пока не заданы" else "$completedCount из $targetCount целей выполнено",
-                                color = Color(0xFF777A9A),
+                                color = Color(0xFFAAA7C0),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -682,31 +682,31 @@ private fun WeeklyPlanReportDialog(
                     Column(
                         modifier = Modifier.fillMaxWidth()
                             .clip(RoundedCornerShape(17.dp))
-                            .background(Color(0xFFF7F7FD))
+                            .background(Color(0xFF2B2936))
                             .padding(13.dp),
                         verticalArrangement = Arrangement.spacedBy(9.dp)
                     ) {
-                        Text(category.category.categoryName, fontWeight = FontWeight.Bold, color = Color(0xFF292C55))
+                        Text(category.category.categoryName, fontWeight = FontWeight.Bold, color = Color(0xFFECEBFA))
                         if (category.targets.isEmpty()) {
-                            Text("Цели не были заданы", color = Color(0xFF8587A4))
+                            Text("Цели не были заданы", color = Color(0xFF9693AD))
                         }
                         category.targets.forEach { target ->
                             val actual = target.actualValue ?: 0
                             val percent = (actual * 100.0 / target.targetValue).roundToInt()
                             Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(targetTypeLabel(target.targetType), modifier = Modifier.weight(1f), color = Color(0xFF666987))
+                                    Text(targetTypeLabel(target.targetType), modifier = Modifier.weight(1f), color = Color(0xFFB8B4CE))
                                     Text(
                                         "${formatTarget(target.targetType, actual, target.unit)} / ${formatTarget(target.targetType, target.targetValue, target.unit)}",
                                         fontWeight = FontWeight.SemiBold,
-                                        color = Color(0xFF34375F)
+                                        color = Color(0xFFE0DDF4)
                                     )
                                 }
                                 PlanProgressBar(percent.coerceIn(0, 100))
                                 Text(
                                     "$percent% выполнения",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = if (percent >= 100) PlanGreen else Color(0xFF777A9A)
+                                    color = if (percent >= 100) PlanGreen else Color(0xFFAAA7C0)
                                 )
                             }
                         }
@@ -776,7 +776,7 @@ private fun WeeklyPlanReportDialog(
 @Composable
 private fun PlanProgressBar(percent: Int) {
     Box(
-        modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(Color(0xFFE4E5F2))
+        modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(Color(0xFF454252))
     ) {
         Box(
             modifier = Modifier.fillMaxWidth(percent / 100f).height(8.dp)
