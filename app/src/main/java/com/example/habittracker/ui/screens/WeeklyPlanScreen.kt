@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -115,15 +114,6 @@ fun WeeklyPlanScreen(onOpenHistory: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFFAAA7C0)
                 )
-            }
-            Box(
-                modifier = Modifier
-                    .size(46.dp)
-                    .clip(CircleShape)
-                    .background(PlanPale),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.Tune, contentDescription = null, tint = PlanIndigo)
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -361,7 +351,7 @@ private fun WeeklyPlanCategoryCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF25232F)),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column(
