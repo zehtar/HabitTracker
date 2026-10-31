@@ -37,6 +37,7 @@ class WeeklyPlanRepository(
     private val categoryPlanHabitDao = database.categoryPlanHabitDao()
     private val habitDao = database.habitDao()
     private val habitEntryDao = database.habitEntryDao()
+    private val weeklyPlanEntryDao = database.weeklyPlanEntryDao()
 
     private val categoryNames = mapOf(
         "WORK_DEVELOPMENT" to "Работа и развитие",
@@ -92,6 +93,32 @@ class WeeklyPlanRepository(
                         )
                     }
                 )
+            }
+
+            val startDate = weekStart.toString()
+            val endDate = weekStart.plusDays(6).toString()
+            val snapshots = mutableListOf<com.example.habittracker.data.database.entity.WeeklyPlanEntryEntity>()
+
+            categoryPlanDao.getForWeek(planId).forEach { category ->
+                categoryPlanHabitDao.getForCategory(category.id).forEach { habitSnapshot ->
+                    habitEntryDao.getEntriesForHabit(habitSnapshot.habitId)
+                        .filter { it.date >= startDate && it.date <= endDate }
+                        .forEach { entry ->
+                            snapshots += com.example.habittracker.data.database.entity.WeeklyPlanEntryEntity(
+                                weeklyPlanId = planId,
+                                habitId = habitSnapshot.habitId,
+                                date = entry.date,
+                                habitType = habitSnapshot.habitType,
+                                completed = entry.completed,
+                                minutesSpent = entry.minutesSpent,
+                                count = entry.count
+                            )
+                        }
+                }
+            }
+
+            if (snapshots.isNotEmpty()) {
+                weeklyPlanEntryDao.upsertEntries(snapshots)
             }
 
             createdPlan
@@ -186,9 +213,9 @@ class WeeklyPlanRepository(
                 "Нельзя утвердить неделю до её завершения"
             }
 
-            val allEntries = habitEntryDao.getAllEntriesOnce()
-            val startDate = LocalDate.parse(plan.weekStartDate)
-            val endDate = LocalDate.parse(plan.weekEndDate)
+            val startDate = plan.weekStartDate
+            val endDate = plan.weekEndDate
+            val planEntries = weeklyPlanEntryDao.getForPlan(weeklyPlanId)
 
             categoryPlanDao.getForWeek(weeklyPlanId).forEach { category ->
                 val snapshots = categoryPlanHabitDao.getForCategory(category.id)
@@ -198,12 +225,12 @@ class WeeklyPlanRepository(
 
                 categoryPlanTargetDao.getForCategory(category.id).forEach { target ->
                     val habitIds = habitIdsByType[target.targetType.uppercase()].orEmpty()
-                    val actual = allEntries.asSequence()
+                    val actual = planEntries.asSequence()
                         .filter { entry ->
                             entry.habitId in habitIds &&
-                                runCatching { LocalDate.parse(entry.date) }
-                                    .getOrNull()
-                                    ?.let { !it.isBefore(startDate) && !it.isAfter(endDate) } == true
+                                entry.date >= startDate &&
+                                entry.date <= endDate &&
+                                entry.habitType.equals(target.targetType, ignoreCase = true)
                         }
                         .sumOf { entry ->
                             when (target.targetType.uppercase()) {
