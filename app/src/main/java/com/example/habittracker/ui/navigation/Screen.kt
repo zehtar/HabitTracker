@@ -8,6 +8,8 @@ sealed class Screen(
 
     data object WeeklyPlan : Screen("weekly_plan")
 
+    data object WeeklyPlanHistory : Screen("weekly_plan_history")
+
     data object Statistics : Screen("statistics")
 
     data object Settings : Screen("settings")
