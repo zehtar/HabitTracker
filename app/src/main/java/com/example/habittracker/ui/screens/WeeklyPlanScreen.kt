@@ -63,6 +63,16 @@ fun WeeklyPlanScreen() {
         viewModel.loadPlan()
     }
 
+    val pendingReport = uiState.pendingReport
+    if (pendingReport != null && uiState.isReportVisible) {
+        WeeklyPlanReportDialog(
+            report = pendingReport,
+            isApproving = uiState.isApproving,
+            onContinue = viewModel::dismissReport,
+            onApprove = viewModel::approveReport
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -107,6 +117,17 @@ fun WeeklyPlanScreen() {
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    if (pendingReport != null) {
+                        item {
+                            OutlinedButton(
+                                onClick = viewModel::showReportAgain,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Итоги прошлой недели")
+                            }
+                        }
+                    }
+
                     item {
                         Card(
                             colors = CardDefaults.cardColors(
@@ -490,4 +511,143 @@ private fun formatTarget(
         }
         else -> "$value $unit"
     }
+}
+
+
+@Composable
+private fun WeeklyPlanReportDialog(
+    report: com.example.habittracker.data.repository.WeeklyPlanDetails,
+    isApproving: Boolean,
+    onContinue: () -> Unit,
+    onApprove: (String?, String) -> Unit
+) {
+    var note by remember(report.plan.id) {
+        mutableStateOf(report.plan.note.orEmpty())
+    }
+    var selectedRating by remember(report.plan.id) {
+        mutableStateOf(report.plan.loadRating ?: "NORMAL")
+    }
+
+    val start = LocalDate.parse(report.plan.weekStartDate)
+    val end = LocalDate.parse(report.plan.weekEndDate)
+    val formatter = DateTimeFormatter.ofPattern("d MMM", Locale("ru"))
+
+    AlertDialog(
+        onDismissRequest = {
+            if (!isApproving) onContinue()
+        },
+        title = { Text("Итоги прошлой недели") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "${start.format(formatter)} — ${end.format(formatter)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                if (report.categories.isEmpty()) {
+                    Text("На прошлой неделе не было категорийных планов.")
+                }
+
+                report.categories.forEach { category ->
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            category.category.categoryName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+
+                        if (category.targets.isEmpty()) {
+                            Text(
+                                "Цели не были заданы",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        category.targets.forEach { target ->
+                            val actual = target.actualValue ?: 0
+                            val percent = (actual * 100.0 / target.targetValue).roundToInt()
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    "${targetTypeLabel(target.targetType)}: " +
+                                        "${formatTarget(target.targetType, actual, target.unit)} / " +
+                                        formatTarget(target.targetType, target.targetValue, target.unit)
+                                )
+                                Text(
+                                    "$percent% выполнения",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = when {
+                                        percent >= 100 -> MaterialTheme.colorScheme.primary
+                                        percent >= 70 -> MaterialTheme.colorScheme.onSurface
+                                        else -> MaterialTheme.colorScheme.error
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    HorizontalDivider()
+                }
+
+                Text(
+                    "Как прошла неделя?",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                val ratings = listOf(
+                    "STRONG_SHORTAGE" to "Сильный недобор",
+                    "SHORTAGE" to "Недобор",
+                    "NORMAL" to "Нормально",
+                    "ABOVE_NORMAL" to "Выше нормы",
+                    "EXCESSIVE" to "Чрезмерная нагрузка"
+                )
+                ratings.forEach { (value, label) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        androidx.compose.material3.RadioButton(
+                            selected = selectedRating == value,
+                            onClick = { selectedRating = value },
+                            enabled = !isApproving
+                        )
+                        Text(
+                            text = label,
+                            modifier = Modifier.weight(1f).padding(start = 4.dp)
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Заметка за неделю (необязательно)") },
+                    minLines = 2,
+                    maxLines = 4,
+                    enabled = !isApproving
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = !isApproving,
+                onClick = { onApprove(note, selectedRating) }
+            ) {
+                Text(if (isApproving) "Сохранение…" else "Утвердить и составить новый план")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onContinue,
+                enabled = !isApproving
+            ) {
+                Text("Продолжить позже")
+            }
+        }
+    )
 }
