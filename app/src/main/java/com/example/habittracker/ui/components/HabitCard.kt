@@ -184,9 +184,9 @@ fun HabitCard(
                             Text("${habit.minutesSpent} мин")
                         }
                     }
-
                     StatusIndicator(
                         completed = completed,
+                        isPaused = habit.isPaused,
                         color = Color(habit.color),
                         modifier = Modifier.padding(start = 24.dp)
                     )
@@ -274,6 +274,7 @@ private fun priorityColor(priority: String): Color {
 @Composable
 private fun StatusIndicator(
     completed: Boolean,
+    isPaused: Boolean,
     color: Color,
     modifier: Modifier = Modifier
 ) {
@@ -290,30 +291,34 @@ private fun StatusIndicator(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = if (completed) "⬤" else "◯",
-            modifier = Modifier.graphicsLayer {
-                scaleX = statusScale
-                scaleY = statusScale
+            text = when {
+                isPaused -> "Ⅱ"
+                completed -> "⬤"
+                else -> "◯"
             },
-            color = if (completed) {
-                color
-            } else {
-                MaterialTheme.colorScheme.outline
+            modifier = Modifier.graphicsLayer {
+                scaleX = if (isPaused) 1f else statusScale
+                scaleY = if (isPaused) 1f else statusScale
+            },
+            color = when {
+                isPaused -> MaterialTheme.colorScheme.tertiary
+                completed -> color
+                else -> MaterialTheme.colorScheme.outline
             }
         )
 
         Spacer(Modifier.width(6.dp))
 
         Text(
-            text = if (completed) {
-                "Выполнено"
-            } else {
-                "Не выполнено"
+            text = when {
+                isPaused -> "На паузе"
+                completed -> "Выполнено"
+                else -> "Не выполнено"
             },
-            color = if (completed) {
-                color
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
+            color = when {
+                isPaused -> MaterialTheme.colorScheme.tertiary
+                completed -> color
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
             }
         )
     }

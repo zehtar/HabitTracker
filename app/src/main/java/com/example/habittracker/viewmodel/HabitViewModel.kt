@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import android.content.Context
+import com.example.habittracker.data.database.entity.HabitPauseEntity
 import com.example.habittracker.data.database.entity.HabitReminderEntity
 import com.example.habittracker.notification.HabitReminderScheduler
 import com.example.habittracker.widget.WidgetUpdater
@@ -333,4 +334,36 @@ class HabitViewModel(
         HabitReminderScheduler(
             context.applicationContext
         )
+
+    fun pauseHabit(
+        habitId: Int,
+        endDate: LocalDate?
+    ) {
+        viewModelScope.launch {
+            repository.pauseHabit(
+                habitId = habitId,
+                endDate = endDate
+            )
+            WidgetUpdater.update(context)
+        }
+    }
+
+    fun resumeHabit(habitId: Int) {
+        viewModelScope.launch {
+            repository.resumeHabit(habitId)
+            WidgetUpdater.update(context)
+        }
+    }
+
+    fun resetHabitStreak(habitId: Int) {
+        viewModelScope.launch {
+            repository.resetHabitStreak(habitId)
+        }
+    }
+
+    fun getPausesForHabit(
+        habitId: Int
+    ): Flow<List<HabitPauseEntity>> {
+        return repository.getPausesForHabit(habitId)
+    }
 }

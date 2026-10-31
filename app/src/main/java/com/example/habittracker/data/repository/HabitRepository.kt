@@ -96,24 +96,43 @@ class HabitRepository(
         selectedDate: Flow<LocalDate>
     ): Flow<List<HabitUiModel>> {
 
-        val entriesForDate =
-            selectedDate.flatMapLatest { date ->
-
-                habitEntryDao.getEntriesForDate(
-                    date.toString()
-                )
-            }
+        val entriesForDate = selectedDate.flatMapLatest { date ->
+            habitEntryDao.getEntriesForDate(date.toString())
+        }
 
         return combine(
             habitDao.getAllHabits(),
-            entriesForDate
+            entriesForDate,
+            habitPauseDao.getAllPauses()
+        ) { habits, entries, pauses ->
 
-        ) { habits, entries ->
+            val today = LocalDate.now()
 
             habits.map { habit ->
                 val entry = entries.find {
                     it.habitId == habit.id
                 }
+
+                val isPausedToday = pauses.any { pause ->
+                    if (pause.habitId != habit.id) {
+                        false
+                    } else {
+                        val startDate = runCatching {
+                            LocalDate.parse(pause.startDate)
+                        }.getOrNull()
+
+                        val endDate = pause.endDate?.let {
+                            runCatching {
+                                LocalDate.parse(it)
+                            }.getOrNull()
+                        }
+
+                        startDate != null &&
+                                !today.isBefore(startDate) &&
+                                (endDate == null || !today.isAfter(endDate))
+                    }
+                }
+
                 HabitUiModel(
                     id = habit.id,
                     name = habit.name,
@@ -125,7 +144,8 @@ class HabitRepository(
                     guideline = habit.guideline,
                     count = entry?.count ?: 0,
                     category = habit.category,
-                    priority = habit.priority
+                    priority = habit.priority,
+                    isPaused = isPausedToday
                 )
             }
         }
@@ -964,8 +984,13 @@ class HabitRepository(
                     streakResetDate ?: LocalDate.MIN
                 )
             ) {
+                val isResetBoundary = streakDate == streakResetDate
 
                 if (isPaused(streakDate)) {
+                    if (isResetBoundary) {
+                        break
+                    }
+
                     streakDate = streakDate.minusDays(1)
                     continue
                 }
@@ -976,7 +1001,7 @@ class HabitRepository(
 
                 currentStreak++
 
-                if (streakDate == streakResetDate) {
+                if (isResetBoundary) {
                     break
                 }
 

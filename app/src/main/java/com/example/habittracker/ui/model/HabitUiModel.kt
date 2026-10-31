@@ -12,5 +12,6 @@ data class HabitUiModel(
     val guideline: String? = null,
     val count: Int = 0,
     val category: String? = null,
-    val priority: String = "IMPORTANT"
+    val priority: String = "IMPORTANT",
+    val isPaused: Boolean = false
 )
