@@ -202,6 +202,11 @@ class WeeklyPlanRepository(
         today: LocalDate = LocalDate.now()
     ): WeeklyPlanDetails? {
         val plan = getPendingPreviousWeek(today) ?: return null
+        return getPlanReport(plan.id)
+    }
+
+    suspend fun getPlanReport(weeklyPlanId: Int): WeeklyPlanDetails? {
+        val plan = weeklyPlanDao.getById(weeklyPlanId) ?: return null
         snapshotExistingEntries(plan)
         val details = getPlanDetails(plan.id) ?: return null
         val entries = weeklyPlanEntryDao.getForPlan(plan.id)
