@@ -245,6 +245,7 @@ class WeeklyPlanRepository(
                 "Нельзя утвердить неделю до её завершения"
             }
 
+            snapshotExistingEntries(plan)
             val startDate = plan.weekStartDate
             val endDate = plan.weekEndDate
             val planEntries = weeklyPlanEntryDao.getForPlan(weeklyPlanId)
