@@ -68,7 +68,8 @@ fun WeeklyPlanScreen() {
         WeeklyPlanReportDialog(
             report = pendingReport,
             isApproving = uiState.isApproving,
-            onContinue = viewModel::dismissReport,
+            isTestReport = uiState.isTestReport,
+            onContinue = if (uiState.isTestReport) viewModel::finishTestReport else viewModel::dismissReport,
             onApprove = viewModel::approveReport
         )
     }
@@ -117,6 +118,24 @@ fun WeeklyPlanScreen() {
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    if (isDraft) {
+                        item {
+                            OutlinedButton(
+                                onClick = viewModel::finishTestWeek,
+                                enabled = !uiState.isApproving,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Завершить тестовую неделю")
+                            }
+                            Text(
+                                "Временная кнопка для проверки отчёта. План не будет утверждён и останется черновиком.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                        }
+                    }
+
                     if (pendingReport != null) {
                         item {
                             OutlinedButton(
@@ -518,6 +537,7 @@ private fun formatTarget(
 private fun WeeklyPlanReportDialog(
     report: com.example.habittracker.data.repository.WeeklyPlanDetails,
     isApproving: Boolean,
+    isTestReport: Boolean,
     onContinue: () -> Unit,
     onApprove: (String?, String) -> Unit
 ) {
@@ -536,7 +556,7 @@ private fun WeeklyPlanReportDialog(
         onDismissRequest = {
             if (!isApproving) onContinue()
         },
-        title = { Text("Итоги прошлой недели") },
+        title = { Text(if (isTestReport) "Тестовый отчёт недели" else "Итоги прошлой недели") },
         text = {
             Column(
                 modifier = Modifier
@@ -638,7 +658,13 @@ private fun WeeklyPlanReportDialog(
                 enabled = !isApproving,
                 onClick = { onApprove(note, selectedRating) }
             ) {
-                Text(if (isApproving) "Сохранение…" else "Утвердить и составить новый план")
+                Text(
+                    when {
+                        isApproving -> "Обработка…"
+                        isTestReport -> "Завершить тест"
+                        else -> "Утвердить и составить новый план"
+                    }
+                )
             }
         },
         dismissButton = {
