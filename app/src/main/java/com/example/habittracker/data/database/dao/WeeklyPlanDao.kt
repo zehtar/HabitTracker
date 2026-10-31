@@ -26,6 +26,14 @@ interface WeeklyPlanDao {
     @Query("SELECT * FROM weekly_plans WHERE weekStartDate = :weekStartDate LIMIT 1")
     suspend fun getByWeekStart(weekStartDate: String): WeeklyPlanEntity?
 
+    @Query("""
+        SELECT * FROM weekly_plans
+        WHERE status = 'DRAFT'
+          AND weekStartDate <= :date
+          AND weekEndDate >= :date
+    """)
+    suspend fun getDraftPlansForDate(date: String): List<WeeklyPlanEntity>
+
     @Query("SELECT * FROM weekly_plans ORDER BY weekStartDate DESC")
     fun observeAll(): Flow<List<WeeklyPlanEntity>>
 
