@@ -19,6 +19,9 @@ interface CategoryPlanTargetDao {
     @Update
     suspend fun update(target: CategoryPlanTargetEntity)
 
+    @Query("DELETE FROM category_plan_targets WHERE categoryPlanId = :categoryPlanId")
+    suspend fun deleteForCategory(categoryPlanId: Int)
+
     @Query("SELECT * FROM category_plan_targets WHERE categoryPlanId = :categoryPlanId ORDER BY targetType")
     suspend fun getForCategory(categoryPlanId: Int): List<CategoryPlanTargetEntity>
 
