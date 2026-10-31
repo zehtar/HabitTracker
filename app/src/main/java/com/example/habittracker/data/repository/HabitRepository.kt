@@ -172,19 +172,20 @@ class HabitRepository(
                 val habitSnapshot = categoryPlanHabitDao
                     .getForCategory(category.id)
                     .firstOrNull { it.habitId == entry.habitId }
-                    ?: return@forEach
 
-                weeklyPlanEntryDao.upsertEntry(
-                    WeeklyPlanEntryEntity(
-                        weeklyPlanId = plan.id,
-                        habitId = entry.habitId,
-                        date = entry.date,
-                        habitType = habitSnapshot.habitType,
-                        completed = entry.completed,
-                        minutesSpent = entry.minutesSpent,
-                        count = entry.count
+                if (habitSnapshot != null) {
+                    weeklyPlanEntryDao.upsertEntry(
+                        WeeklyPlanEntryEntity(
+                            weeklyPlanId = plan.id,
+                            habitId = entry.habitId,
+                            date = entry.date,
+                            habitType = habitSnapshot.habitType,
+                            completed = entry.completed,
+                            minutesSpent = entry.minutesSpent,
+                            count = entry.count
+                        )
                     )
-                )
+                }
             }
         }
     }
