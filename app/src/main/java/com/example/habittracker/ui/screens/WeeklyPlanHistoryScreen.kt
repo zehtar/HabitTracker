@@ -52,10 +52,10 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
 
-private val HistoryIndigo = Color(0xFF5968E8)
-private val HistoryViolet = Color(0xFF8B75EE)
-private val HistoryPale = Color(0xFFF0EFFF)
-private val HistoryGreen = Color(0xFF25B879)
+private val HistoryIndigo = Color(0xFFA5A0FF)
+private val HistoryViolet = Color(0xFF786BD0)
+private val HistoryPale = Color(0xFF35314F)
+private val HistoryGreen = Color(0xFF69D6A2)
 
 @Composable
 fun WeeklyPlanHistoryScreen(onBack: () -> Unit) {
@@ -70,7 +70,7 @@ fun WeeklyPlanHistoryScreen(onBack: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F8FF))
+            .background(Color(0xFF17161F))
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(
@@ -86,9 +86,9 @@ fun WeeklyPlanHistoryScreen(onBack: () -> Unit) {
                     "История планов",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF20234D)
+                    color = Color(0xFFF1F0FA)
                 )
-                Text("Ваши завершённые недели", color = Color(0xFF777A9A), style = MaterialTheme.typography.bodySmall)
+                Text("Ваши завершённые недели", color = Color(0xFFAAA7C0), style = MaterialTheme.typography.bodySmall)
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -121,7 +121,7 @@ fun WeeklyPlanHistoryScreen(onBack: () -> Unit) {
                     Spacer(Modifier.height(6.dp))
                     Text(
                         "Утверждённые планы будут появляться здесь.",
-                        color = Color(0xFF777A9A)
+                        color = Color(0xFFAAA7C0)
                     )
                 }
             }
@@ -172,20 +172,20 @@ private fun HistorySummaryCard(count: Int) {
     Row(
         modifier = Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFFECEBFF), Color(0xFFF5F1FF))))
+            .background(Brush.linearGradient(listOf(Color(0xFF302D49), Color(0xFF272536))))
             .padding(17.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(15.dp)).background(Color.White),
+            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(15.dp)).background(Color(0xFF25232F)),
             contentAlignment = Alignment.Center
         ) {
             Icon(Icons.Default.History, contentDescription = null, tint = HistoryIndigo, modifier = Modifier.size(26.dp))
         }
         Spacer(Modifier.width(13.dp))
         Column {
-            Text("$count завершённых недель", fontWeight = FontWeight.Bold, color = Color(0xFF25284F))
-            Text("Все утверждённые планы хранятся здесь", style = MaterialTheme.typography.bodySmall, color = Color(0xFF777A9A))
+            Text("$count завершённых недель", fontWeight = FontWeight.Bold, color = Color(0xFFECEBFA))
+            Text("Все утверждённые планы хранятся здесь", style = MaterialTheme.typography.bodySmall, color = Color(0xFFAAA7C0))
         }
     }
 }
@@ -200,7 +200,7 @@ private fun WeeklyPlanHistoryCard(plan: WeeklyPlanEntity, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(21.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF25232F)),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Row(
@@ -208,7 +208,7 @@ private fun WeeklyPlanHistoryCard(plan: WeeklyPlanEntity, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(43.dp).clip(CircleShape).background(Color(0xFFE5F8EF)),
+                modifier = Modifier.size(43.dp).clip(CircleShape).background(Color(0xFF203D35)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Default.CheckCircle, contentDescription = null, tint = HistoryGreen, modifier = Modifier.size(25.dp))
@@ -219,21 +219,21 @@ private fun WeeklyPlanHistoryCard(plan: WeeklyPlanEntity, onClick: () -> Unit) {
                     start.format(formatter) + " — " + end.format(formatter),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF25284F)
+                    color = Color(0xFFECEBFA)
                 )
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     Text(
                         "Утверждён",
-                        color = Color(0xFF19865A),
+                        color = Color(0xFF76D9A8),
                         style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.clip(CircleShape).background(Color(0xFFE2F7EC)).padding(horizontal = 9.dp, vertical = 4.dp)
+                        modifier = Modifier.clip(CircleShape).background(Color(0xFF203D35)).padding(horizontal = 9.dp, vertical = 4.dp)
                     )
                     plan.loadRating?.let { rating ->
-                        Text(loadRatingLabel(rating), style = MaterialTheme.typography.bodySmall, color = Color(0xFF777A9A))
+                        Text(loadRatingLabel(rating), style = MaterialTheme.typography.bodySmall, color = Color(0xFFAAA7C0))
                     }
                 }
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = "Открыть", tint = Color(0xFF8587A4))
+            Icon(Icons.Default.ChevronRight, contentDescription = "Открыть", tint = Color(0xFF9693AD))
         }
     }
 }
@@ -253,7 +253,7 @@ private fun ApprovedWeeklyPlanDialog(details: WeeklyPlanDetails, onDismiss: () -
                 Text(
                     start.format(formatter) + " — " + end.format(formatter),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF777A9A)
+                    color = Color(0xFFAAA7C0)
                 )
             }
         },
@@ -266,38 +266,38 @@ private fun ApprovedWeeklyPlanDialog(details: WeeklyPlanDetails, onDismiss: () -
                     Column(
                         modifier = Modifier.fillMaxWidth()
                             .clip(RoundedCornerShape(17.dp))
-                            .background(Color(0xFFF7F7FD))
+                            .background(Color(0xFF2B2936))
                             .padding(13.dp),
                         verticalArrangement = Arrangement.spacedBy(9.dp)
                     ) {
-                        Text(category.category.categoryName, fontWeight = FontWeight.Bold, color = Color(0xFF292C55))
+                        Text(category.category.categoryName, fontWeight = FontWeight.Bold, color = Color(0xFFECEBFA))
                         if (category.habits.isNotEmpty()) {
                             Text(
                                 category.habits.joinToString { it.habitName },
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF8587A4)
+                                color = Color(0xFF9693AD)
                             )
                         }
                         if (category.targets.isEmpty()) {
-                            Text("Цели не были заданы", color = Color(0xFF8587A4))
+                            Text("Цели не были заданы", color = Color(0xFF9693AD))
                         }
                         category.targets.forEach { target ->
                             val actual = target.actualValue ?: 0
                             val percent = (actual * 100.0 / target.targetValue).roundToInt()
                             Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(targetTypeLabel(target.targetType), modifier = Modifier.weight(1f), color = Color(0xFF666987))
+                                    Text(targetTypeLabel(target.targetType), modifier = Modifier.weight(1f), color = Color(0xFFB8B4CE))
                                     Text(
                                         "${formatTarget(target.targetType, actual, target.unit)} / ${formatTarget(target.targetType, target.targetValue, target.unit)}",
                                         fontWeight = FontWeight.SemiBold,
-                                        color = Color(0xFF34375F)
+                                        color = Color(0xFFE0DDF4)
                                     )
                                 }
                                 HistoryProgressBar(percent.coerceIn(0, 100))
                                 Text(
                                     "$percent% выполнения",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = if (percent >= 100) HistoryGreen else Color(0xFF777A9A)
+                                    color = if (percent >= 100) HistoryGreen else Color(0xFFAAA7C0)
                                 )
                             }
                         }
@@ -309,7 +309,7 @@ private fun ApprovedWeeklyPlanDialog(details: WeeklyPlanDetails, onDismiss: () -
                         .background(HistoryPale).padding(13.dp),
                     verticalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
-                    Text("Оценка недели", fontWeight = FontWeight.SemiBold, color = Color(0xFF292C55))
+                    Text("Оценка недели", fontWeight = FontWeight.SemiBold, color = Color(0xFFECEBFA))
                     Text(
                         details.plan.loadRating?.let(::loadRatingLabel) ?: "Не указана",
                         color = HistoryIndigo
@@ -318,11 +318,11 @@ private fun ApprovedWeeklyPlanDialog(details: WeeklyPlanDetails, onDismiss: () -
                 details.plan.note?.let { note ->
                     Column(
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                            .background(Color(0xFFF7F7FD)).padding(13.dp),
+                            .background(Color(0xFF2B2936)).padding(13.dp),
                         verticalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
-                        Text("Заметка", fontWeight = FontWeight.SemiBold, color = Color(0xFF292C55))
-                        Text(note, color = Color(0xFF555875))
+                        Text("Заметка", fontWeight = FontWeight.SemiBold, color = Color(0xFFECEBFA))
+                        Text(note, color = Color(0xFFD0CDE2))
                     }
                 }
             }
@@ -336,7 +336,7 @@ private fun ApprovedWeeklyPlanDialog(details: WeeklyPlanDetails, onDismiss: () -
 @Composable
 private fun HistoryProgressBar(percent: Int) {
     Box(
-        modifier = Modifier.fillMaxWidth().height(7.dp).clip(CircleShape).background(Color(0xFFE4E5F2))
+        modifier = Modifier.fillMaxWidth().height(7.dp).clip(CircleShape).background(Color(0xFF454252))
     ) {
         Box(
             modifier = Modifier.fillMaxWidth(percent / 100f).height(7.dp)
