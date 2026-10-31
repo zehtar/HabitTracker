@@ -18,7 +18,7 @@ interface WeeklyPlanEntryDao {
         """
         SELECT * FROM weekly_plan_entries
         WHERE weeklyPlanId = :weeklyPlanId
-        ORDER BY date, habitName
+        ORDER BY date, habitId
         """
     )
     suspend fun getForPlan(weeklyPlanId: Int): List<WeeklyPlanEntryEntity>
