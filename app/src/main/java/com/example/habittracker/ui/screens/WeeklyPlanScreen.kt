@@ -52,7 +52,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
-fun WeeklyPlanScreen() {
+fun WeeklyPlanScreen(onOpenHistory: () -> Unit) {
     val context = LocalContext.current
     val viewModel: WeeklyPlanViewModel = viewModel(
         factory = WeeklyPlanViewModelFactory(context)
@@ -118,6 +118,15 @@ fun WeeklyPlanScreen() {
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    item {
+                        OutlinedButton(
+                            onClick = onOpenHistory,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("История планов")
+                        }
+                    }
+
                     if (isDraft) {
                         item {
                             OutlinedButton(
@@ -125,14 +134,8 @@ fun WeeklyPlanScreen() {
                                 enabled = !uiState.isApproving,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Завершить тестовую неделю")
+                                Text("Проверить план")
                             }
-                            Text(
-                                "Временная кнопка для проверки отчёта. План не будет утверждён и останется черновиком.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 4.dp)
-                            )
                         }
                     }
 
@@ -556,7 +559,7 @@ private fun WeeklyPlanReportDialog(
         onDismissRequest = {
             if (!isApproving) onContinue()
         },
-        title = { Text(if (isTestReport) "Тестовый отчёт недели" else "Итоги прошлой недели") },
+        title = { Text(if (isTestReport) "Прогресс текущей недели" else "Итоги прошлой недели") },
         text = {
             Column(
                 modifier = Modifier
@@ -613,6 +616,7 @@ private fun WeeklyPlanReportDialog(
                     HorizontalDivider()
                 }
 
+                if (!isTestReport) {
                 Text(
                     "Как прошла неделя?",
                     style = MaterialTheme.typography.titleSmall,
@@ -651,6 +655,7 @@ private fun WeeklyPlanReportDialog(
                     maxLines = 4,
                     enabled = !isApproving
                 )
+                }
             }
         },
         confirmButton = {
@@ -661,7 +666,7 @@ private fun WeeklyPlanReportDialog(
                 Text(
                     when {
                         isApproving -> "Обработка…"
-                        isTestReport -> "Завершить тест"
+                        isTestReport -> "Закрыть"
                         else -> "Утвердить и составить новый план"
                     }
                 )
@@ -672,7 +677,7 @@ private fun WeeklyPlanReportDialog(
                 onClick = onContinue,
                 enabled = !isApproving
             ) {
-                Text("Продолжить позже")
+                Text(if (isTestReport) "Закрыть" else "Продолжить позже")
             }
         }
     )
