@@ -15,6 +15,7 @@ import com.example.habittracker.ui.screens.RemindersScreen
 import com.example.habittracker.ui.screens.SettingsScreen
 import com.example.habittracker.ui.screens.StatisticsScreen
 import com.example.habittracker.ui.screens.WeeklyPlanScreen
+import com.example.habittracker.ui.screens.WeeklyPlanHistoryScreen
 
 @Composable
 fun HabitNavigation(
@@ -42,7 +43,13 @@ fun HabitNavigation(
             }
 
             composable(Screen.WeeklyPlan.route) {
-                WeeklyPlanScreen()
+                WeeklyPlanScreen(
+                    onOpenHistory = { navController.navigate(Screen.WeeklyPlanHistory.route) }
+                )
+            }
+
+            composable(Screen.WeeklyPlanHistory.route) {
+                WeeklyPlanHistoryScreen(onBack = { navController.popBackStack() })
             }
 
             composable(Screen.Statistics.route) {
