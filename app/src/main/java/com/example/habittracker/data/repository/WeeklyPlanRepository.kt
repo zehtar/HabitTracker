@@ -28,6 +28,10 @@ data class WeeklyPlanDetails(
     val uncategorizedHabitCount: Int
 )
 
+data class WeeklyPlanReportDetails(
+    val details: WeeklyPlanDetails
+)
+
 class WeeklyPlanRepository(
     private val database: HabitDatabase
 ) {
@@ -192,6 +196,44 @@ class WeeklyPlanRepository(
         val previousMonday = currentMonday.minusWeeks(1)
         return weeklyPlanDao.getByWeekStart(previousMonday.toString())
             ?.takeIf { it.status == DRAFT_STATUS }
+    }
+
+    suspend fun getPendingPreviousWeekReport(
+        today: LocalDate = LocalDate.now()
+    ): WeeklyPlanDetails? {
+        val plan = getPendingPreviousWeek(today) ?: return null
+        snapshotExistingEntries(plan)
+        val details = getPlanDetails(plan.id) ?: return null
+        val entries = weeklyPlanEntryDao.getForPlan(plan.id)
+
+        val categoriesWithActuals = details.categories.map { category ->
+            val habitIdsByType = category.habits
+                .groupBy { it.habitType.uppercase() }
+                .mapValues { (_, habits) -> habits.map { it.habitId }.toSet() }
+
+            val targetsWithActuals = category.targets.map { target ->
+                val habitIds = habitIdsByType[target.targetType.uppercase()].orEmpty()
+                val actual = entries.asSequence()
+                    .filter { entry ->
+                        entry.habitId in habitIds &&
+                            entry.date >= plan.weekStartDate &&
+                            entry.date <= plan.weekEndDate &&
+                            entry.habitType.equals(target.targetType, ignoreCase = true)
+                    }
+                    .sumOf { entry ->
+                        when (target.targetType.uppercase()) {
+                            "TIME" -> entry.minutesSpent.coerceAtLeast(0)
+                            "CHECK" -> if (entry.completed) 1 else 0
+                            "COUNTER" -> entry.count.coerceAtLeast(0)
+                            else -> 0
+                        }
+                    }
+                target.copy(actualValue = actual)
+            }
+            category.copy(targets = targetsWithActuals)
+        }
+
+        return details.copy(categories = categoriesWithActuals)
     }
 
     /**
