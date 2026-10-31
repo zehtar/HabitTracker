@@ -9,16 +9,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.habittracker.ui.components.BottomNavigationBar
 import com.example.habittracker.ui.screens.ActivityStatisticsScreen
+import com.example.habittracker.ui.screens.FullStatisticsScreen
 import com.example.habittracker.ui.screens.HabitTrackerScreen
 import com.example.habittracker.ui.screens.RemindersScreen
-import com.example.habittracker.ui.screens.StatisticsScreen
 import com.example.habittracker.ui.screens.SettingsScreen
-import com.example.habittracker.ui.screens.FullStatisticsScreen
-import android.content.Context
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.habittracker.viewmodel.HabitViewModel
-import com.example.habittracker.viewmodel.HabitViewModelFactory
+import com.example.habittracker.ui.screens.StatisticsScreen
+import com.example.habittracker.ui.screens.WeeklyPlanScreen
+
 @Composable
 fun HabitNavigation(
     modifier: Modifier,
@@ -26,43 +23,35 @@ fun HabitNavigation(
 ) {
     val navController = rememberNavController()
 
-    val context = LocalContext.current
-
-    val viewModel: HabitViewModel = viewModel(
-        factory = HabitViewModelFactory(context)
-    )
     Scaffold(
         bottomBar = {
             BottomNavigationBar(
                 navController = navController
             )
         }
-
     ) { innerPadding ->
-
         NavHost(
             navController = navController,
             startDestination = Screen.Habits.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-
             composable(Screen.Habits.route) {
                 HabitTrackerScreen(
                     initialHabitId = initialHabitId
                 )
             }
 
+            composable(Screen.WeeklyPlan.route) {
+                WeeklyPlanScreen()
+            }
+
             composable(Screen.Statistics.route) {
                 StatisticsScreen(
                     onOpenActivityStatistics = {
-                        navController.navigate(
-                            Screen.ActivityStatistics.route
-                        )
+                        navController.navigate(Screen.ActivityStatistics.route)
                     },
                     onOpenFullStatistics = {
-                        navController.navigate(
-                            Screen.FullStatistics.route
-                        )
+                        navController.navigate(Screen.FullStatistics.route)
                     }
                 )
             }
