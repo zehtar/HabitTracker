@@ -12,9 +12,13 @@ import com.example.habittracker.data.database.entity.*
         HabitEntity::class,
         HabitEntryEntity::class,
         HabitReminderEntity::class,
-        HabitPauseEntity::class
+        HabitPauseEntity::class,
+        WeeklyPlanEntity::class,
+        CategoryPlanEntity::class,
+        CategoryPlanTargetEntity::class,
+        CategoryPlanHabitEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class HabitDatabase : RoomDatabase() {
@@ -24,7 +28,103 @@ abstract class HabitDatabase : RoomDatabase() {
     abstract fun habitReminderDao(): HabitReminderDao
 
     abstract fun habitPauseDao(): HabitPauseDao
+    abstract fun weeklyPlanDao(): WeeklyPlanDao
+    abstract fun categoryPlanDao(): CategoryPlanDao
+    abstract fun categoryPlanTargetDao(): CategoryPlanTargetDao
+    abstract fun categoryPlanHabitDao(): CategoryPlanHabitDao
 }
+
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS weekly_plans (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                weekStartDate TEXT NOT NULL,
+                weekEndDate TEXT NOT NULL,
+                createdAt TEXT NOT NULL,
+                status TEXT NOT NULL,
+                note TEXT,
+                loadRating TEXT
+            )
+        """.trimIndent())
+
+        database.execSQL("""
+            CREATE UNIQUE INDEX IF NOT EXISTS
+            index_weekly_plans_weekStartDate
+            ON weekly_plans(weekStartDate)
+        """.trimIndent())
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS category_plans (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                weeklyPlanId INTEGER NOT NULL,
+                categoryKey TEXT NOT NULL,
+                categoryName TEXT NOT NULL,
+                FOREIGN KEY(weeklyPlanId)
+                    REFERENCES weekly_plans(id)
+                    ON DELETE CASCADE
+            )
+        """.trimIndent())
+
+        database.execSQL("""
+            CREATE INDEX IF NOT EXISTS
+            index_category_plans_weeklyPlanId
+            ON category_plans(weeklyPlanId)
+        """.trimIndent())
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS category_plan_targets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                categoryPlanId INTEGER NOT NULL,
+                targetType TEXT NOT NULL,
+                targetValue INTEGER NOT NULL,
+                unit TEXT NOT NULL,
+                actualValue INTEGER,
+                FOREIGN KEY(categoryPlanId)
+                    REFERENCES category_plans(id)
+                    ON DELETE CASCADE
+            )
+        """.trimIndent())
+
+        database.execSQL("""
+            CREATE INDEX IF NOT EXISTS
+            index_category_plan_targets_categoryPlanId
+            ON category_plan_targets(categoryPlanId)
+        """.trimIndent())
+
+        database.execSQL("""
+            CREATE UNIQUE INDEX IF NOT EXISTS
+            index_category_plan_targets_categoryPlanId_targetType
+            ON category_plan_targets(categoryPlanId, targetType)
+        """.trimIndent())
+
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS category_plan_habits (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                categoryPlanId INTEGER NOT NULL,
+                habitId INTEGER NOT NULL,
+                habitName TEXT NOT NULL,
+                habitType TEXT NOT NULL,
+                FOREIGN KEY(categoryPlanId)
+                    REFERENCES category_plans(id)
+                    ON DELETE CASCADE
+            )
+        """.trimIndent())
+
+        database.execSQL("""
+            CREATE INDEX IF NOT EXISTS
+            index_category_plan_habits_categoryPlanId
+            ON category_plan_habits(categoryPlanId)
+        """.trimIndent())
+
+        database.execSQL("""
+            CREATE UNIQUE INDEX IF NOT EXISTS
+            index_category_plan_habits_categoryPlanId_habitId
+            ON category_plan_habits(categoryPlanId, habitId)
+        """.trimIndent())
+    }
+}
+
 val MIGRATION_6_7 = object : Migration(6, 7) {
 
     override fun migrate(database: SupportSQLiteDatabase) {
