@@ -60,7 +60,10 @@ class WeeklyPlanRepository(
         return database.withTransaction {
             val weekStartString = weekStart.toString()
             val existing = weeklyPlanDao.getByWeekStart(weekStartString)
-            if (existing != null) return@withTransaction existing
+            if (existing != null) {
+                snapshotExistingEntries(existing)
+                return@withTransaction existing
+            }
 
             val habits = habitDao.getAllHabitsOnce()
             val plan = WeeklyPlanEntity(
@@ -121,7 +124,36 @@ class WeeklyPlanRepository(
                 weeklyPlanEntryDao.upsertEntries(snapshots)
             }
 
+            snapshotExistingEntries(createdPlan)
             createdPlan
+        }
+    }
+
+    private suspend fun snapshotExistingEntries(plan: WeeklyPlanEntity) {
+        val startDate = plan.weekStartDate
+        val endDate = plan.weekEndDate
+        val snapshots = mutableListOf<com.example.habittracker.data.database.entity.WeeklyPlanEntryEntity>()
+
+        categoryPlanDao.getForWeek(plan.id).forEach { category ->
+            categoryPlanHabitDao.getForCategory(category.id).forEach { habitSnapshot ->
+                habitEntryDao.getEntriesForHabit(habitSnapshot.habitId)
+                    .filter { it.date >= startDate && it.date <= endDate }
+                    .forEach { entry ->
+                        snapshots += com.example.habittracker.data.database.entity.WeeklyPlanEntryEntity(
+                            weeklyPlanId = plan.id,
+                            habitId = habitSnapshot.habitId,
+                            date = entry.date,
+                            habitType = habitSnapshot.habitType,
+                            completed = entry.completed,
+                            minutesSpent = entry.minutesSpent,
+                            count = entry.count
+                        )
+                    }
+            }
+        }
+
+        if (snapshots.isNotEmpty()) {
+            weeklyPlanEntryDao.upsertEntries(snapshots)
         }
     }
 
