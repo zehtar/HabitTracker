@@ -19,6 +19,10 @@ class HabitRepository(
     private val habitReminderDao = database.habitReminderDao()
 
     private val habitPauseDao = database.habitPauseDao()
+    private val weeklyPlanDao = database.weeklyPlanDao()
+    private val categoryPlanDao = database.categoryPlanDao()
+    private val categoryPlanHabitDao = database.categoryPlanHabitDao()
+    private val weeklyPlanEntryDao = database.weeklyPlanEntryDao()
 
     suspend fun pauseHabit(
         habitId: Int,
@@ -152,7 +156,37 @@ class HabitRepository(
     }
 
     suspend fun updateEntry(entry: HabitEntryEntity) {
-        habitEntryDao.upsertEntry(entry)
+        database.withTransaction {
+            habitEntryDao.upsertEntry(entry)
+            syncWeeklyPlanEntry(entry)
+        }
+    }
+
+    private suspend fun syncWeeklyPlanEntry(entry: HabitEntryEntity) {
+        val draftPlans = weeklyPlanDao.getDraftPlansForDate(entry.date)
+
+        draftPlans.forEach { plan ->
+            val categories = categoryPlanDao.getForWeek(plan.id)
+
+            categories.forEach { category ->
+                val habitSnapshot = categoryPlanHabitDao
+                    .getForCategory(category.id)
+                    .firstOrNull { it.habitId == entry.habitId }
+                    ?: return@forEach
+
+                weeklyPlanEntryDao.upsertEntry(
+                    WeeklyPlanEntryEntity(
+                        weeklyPlanId = plan.id,
+                        habitId = entry.habitId,
+                        date = entry.date,
+                        habitType = habitSnapshot.habitType,
+                        completed = entry.completed,
+                        minutesSpent = entry.minutesSpent,
+                        count = entry.count
+                    )
+                )
+            }
+        }
     }
 
     suspend fun updateHabit(
@@ -218,29 +252,30 @@ class HabitRepository(
         minutesSpent: Int,
         count: Int
     ) {
-        val oldEntry = habitEntryDao.getEntryForDay(
-            habitId = habitId,
-            date = date.toString(),
-        )
+        database.withTransaction {
+            val oldEntry = habitEntryDao.getEntryForDay(
+                habitId = habitId,
+                date = date.toString()
+            )
 
-        if (oldEntry != null) {
-            habitEntryDao.upsertEntry(
+            val updatedEntry = if (oldEntry != null) {
                 oldEntry.copy(
                     completed = completed,
                     minutesSpent = minutesSpent,
                     count = count
                 )
-            )
-        } else {
-            habitEntryDao.upsertEntry(
+            } else {
                 HabitEntryEntity(
                     habitId = habitId,
                     date = date.toString(),
                     completed = completed,
                     minutesSpent = minutesSpent,
-                    count = count ?: 0
+                    count = count
                 )
-            )
+            }
+
+            habitEntryDao.upsertEntry(updatedEntry)
+            syncWeeklyPlanEntry(updatedEntry)
         }
     }
 
