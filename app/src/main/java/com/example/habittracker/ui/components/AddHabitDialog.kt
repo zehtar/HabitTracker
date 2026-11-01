@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -12,6 +14,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -462,11 +473,8 @@ private fun EmojiPickerDialog(
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
                 )
                 if (search.isBlank()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        habitEmojiGroups.forEach { item ->
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(habitEmojiGroups) { item ->
                             FilterChip(
                                 selected = selectedGroup == item.title,
                                 onClick = { selectedGroup = item.title },
@@ -517,11 +525,9 @@ private fun HabitColorPickerDialog(
     var previewColor by remember(selectedColor) { mutableStateOf(Color(selectedColor)) }
     var hue by remember(selectedColor) {
         mutableFloatStateOf(
-            android.graphics.Color.colorToHSV(Color(selectedColor).toArgb(), FloatArray(3)).let {
-                val hsv = FloatArray(3)
-                android.graphics.Color.colorToHSV(Color(selectedColor).toArgb(), hsv)
-                hsv[0]
-            }
+            val hsv = FloatArray(3)
+            android.graphics.Color.colorToHSV(Color(selectedColor).toArgb(), hsv)
+            hsv[0]
         )
     }
 
@@ -569,7 +575,6 @@ private fun HabitColorPickerDialog(
                                 )
                                 .clickable {
                                     previewColor = Color(color)
-                                    android.graphics.Color.colorToHSV(color, FloatArray(3)).also { }
                                     val hsv = FloatArray(3)
                                     android.graphics.Color.colorToHSV(color, hsv)
                                     hue = hsv[0]
