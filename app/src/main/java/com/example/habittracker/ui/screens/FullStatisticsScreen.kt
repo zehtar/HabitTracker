@@ -267,6 +267,75 @@ fun FullStatisticsScreen(
         )
 
         // ---------------------------------------------------------
+        // CATEGORY STATISTICS
+        // ---------------------------------------------------------
+
+        SectionTitle(
+            text = "Статистика по категориям"
+        )
+
+        Spacer(
+            modifier = Modifier.height(10.dp)
+        )
+
+        if (fullStatistics.categoryStatistics.isEmpty()) {
+            FullStatisticsCard {
+                Text(
+                    text = "За выбранный период пока нет привычек с категориями.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        } else {
+            fullStatistics.categoryStatistics.forEach { category ->
+                FullStatisticsCard {
+                    Text(
+                        text = categoryDisplayName(category.category),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(Modifier.height(4.dp))
+
+                    Text(
+                        text = "Привычек: ${category.habitCount}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        StatisticsValue(
+                            value = category.completedChecks.toString(),
+                            label = "Выполнения",
+                            modifier = Modifier.weight(1f)
+                        )
+                        StatisticsValue(
+                            value = formatMinutes(category.totalMinutes),
+                            label = "Время",
+                            modifier = Modifier.weight(1f)
+                        )
+                        StatisticsValue(
+                            value = category.totalCount.toString(),
+                            label = "Количество",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+            }
+        }
+
+        Spacer(
+            modifier = Modifier.height(28.dp)
+        )
+
+        // ---------------------------------------------------------
         // HABIT ANALYSIS
         // ---------------------------------------------------------
 
@@ -924,5 +993,17 @@ private fun buildActivityTrendPoints(
                 .coerceIn(0, 100),
             minutes = day.minutes
         )
+    }
+}
+
+private fun categoryDisplayName(category: String): String {
+    return when (category) {
+        "WORK_DEVELOPMENT" -> "Работа и развитие"
+        "HEALTH" -> "Здоровье"
+        "LEARNING" -> "Обучение"
+        "HOBBY" -> "Хобби"
+        "HOME_EVERYDAY" -> "Быт"
+        "PERSONAL_DEVELOPMENT" -> "Личное развитие"
+        else -> category
     }
 }
