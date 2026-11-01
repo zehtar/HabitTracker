@@ -54,6 +54,20 @@ class HabitViewModel(
         _selectedFullStatisticsPeriod.value = period
     }
 
+    private val _comparisonFirstMonth = MutableStateFlow(LocalDate.now().withDayOfMonth(1).minusMonths(1))
+    val comparisonFirstMonth = _comparisonFirstMonth.asStateFlow()
+    private val _comparisonSecondMonth = MutableStateFlow(LocalDate.now().withDayOfMonth(1))
+    val comparisonSecondMonth = _comparisonSecondMonth.asStateFlow()
+    private val _categoryStatisticsMonth = MutableStateFlow(LocalDate.now().withDayOfMonth(1))
+    val categoryStatisticsMonth = _categoryStatisticsMonth.asStateFlow()
+
+    fun previousComparisonFirstMonth() { _comparisonFirstMonth.value = _comparisonFirstMonth.value.minusMonths(1) }
+    fun nextComparisonFirstMonth() { _comparisonFirstMonth.value = _comparisonFirstMonth.value.plusMonths(1) }
+    fun previousComparisonSecondMonth() { _comparisonSecondMonth.value = _comparisonSecondMonth.value.minusMonths(1) }
+    fun nextComparisonSecondMonth() { _comparisonSecondMonth.value = _comparisonSecondMonth.value.plusMonths(1) }
+    fun previousCategoryStatisticsMonth() { _categoryStatisticsMonth.value = _categoryStatisticsMonth.value.minusMonths(1) }
+    fun nextCategoryStatisticsMonth() { _categoryStatisticsMonth.value = _categoryStatisticsMonth.value.plusMonths(1) }
+
     private val _selectedFullStatisticsHabit =
         MutableStateFlow<Int?>(null)
 
@@ -70,7 +84,10 @@ class HabitViewModel(
         repository
             .getFullStatistics(
                 period = selectedFullStatisticsPeriod,
-                selectedHabitId = selectedFullStatisticsHabit
+                selectedHabitId = selectedFullStatisticsHabit,
+                comparisonFirstMonth = comparisonFirstMonth,
+                comparisonSecondMonth = comparisonSecondMonth,
+                categoryMonth = categoryStatisticsMonth
             )
             .stateIn(
                 scope = viewModelScope,
