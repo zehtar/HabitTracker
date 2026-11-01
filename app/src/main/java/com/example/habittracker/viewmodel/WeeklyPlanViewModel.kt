@@ -94,6 +94,31 @@ class WeeklyPlanViewModel(
         }
     }
 
+    fun reopenCurrentPlanForEditing() {
+        val currentPlan = _uiState.value.details ?: return
+        if (_uiState.value.isApproving || currentPlan.plan.status != WeeklyPlanRepository.APPROVED_STATUS) return
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isApproving = true, error = null)
+            runCatching {
+                repository.reopenPlanAsDraft(currentPlan.plan.id)
+                repository.getPlanDetails(currentPlan.plan.id)
+                    ?: throw IllegalStateException("Не удалось открыть план для редактирования")
+            }.onSuccess { details ->
+                _uiState.value = _uiState.value.copy(
+                    isApproving = false,
+                    details = details,
+                    error = null
+                )
+            }.onFailure { error ->
+                _uiState.value = _uiState.value.copy(
+                    isApproving = false,
+                    error = error.message ?: "Не удалось открыть редактирование плана"
+                )
+            }
+        }
+    }
+
     fun dismissReport() {
         _uiState.value = _uiState.value.copy(isReportVisible = false)
     }
