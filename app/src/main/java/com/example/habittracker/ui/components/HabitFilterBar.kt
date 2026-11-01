@@ -83,7 +83,7 @@ fun HabitFilterBar(
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(androidx.compose.ui.unit.dp(4))
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             HabitFilterDropdown(
                 modifier = Modifier.weight(1f),
