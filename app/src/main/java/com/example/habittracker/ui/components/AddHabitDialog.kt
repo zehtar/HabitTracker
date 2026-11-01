@@ -524,11 +524,9 @@ private fun HabitColorPickerDialog(
 ) {
     var previewColor by remember(selectedColor) { mutableStateOf(Color(selectedColor)) }
     var hue by remember(selectedColor) {
-        mutableFloatStateOf(
-            val hsv = FloatArray(3)
-            android.graphics.Color.colorToHSV(Color(selectedColor).toArgb(), hsv)
-            hsv[0]
-        )
+        val hsv = FloatArray(3)
+        android.graphics.Color.colorToHSV(Color(selectedColor).toArgb(), hsv)
+        mutableFloatStateOf(hsv[0])
     }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -551,7 +549,7 @@ private fun HabitColorPickerDialog(
                 ) {
                     Text(
                         text = "Предпросмотр",
-                        color = if (previewColor luminanceForText() > 0.45f) Color.Black else Color.White,
+                        color = if (previewColor.luminanceForText() > 0.45f) Color.Black else Color.White,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -576,7 +574,7 @@ private fun HabitColorPickerDialog(
                                 .clickable {
                                     previewColor = Color(color)
                                     val hsv = FloatArray(3)
-                                    android.graphics.Color.colorToHSV(color, hsv)
+                                    android.graphics.Color.colorToHSV(color.toInt(), hsv)
                                     hue = hsv[0]
                                 }
                         )
