@@ -255,6 +255,35 @@ class WeeklyPlanRepository(
      * Calculates and stores actual values, then freezes the plan as approved.
      * TIME = total minutes, CHECK = completed entries, COUNTER = total count.
      */
+    /** Reopens the current week's approved plan for editing. Previous weeks remain immutable. */
+    suspend fun reopenPlanAsDraft(weeklyPlanId: Int, today: LocalDate = LocalDate.now()) {
+        database.withTransaction {
+            val plan = weeklyPlanDao.getById(weeklyPlanId)
+                ?: throw IllegalArgumentException("План не найден")
+            val currentMonday = today.with(DayOfWeek.MONDAY)
+            require(plan.weekStartDate == currentMonday.toString()) {
+                "Можно редактировать только план текущей недели"
+            }
+            require(plan.status == APPROVED_STATUS) {
+                "План уже находится в режиме редактирования"
+            }
+
+            categoryPlanDao.getForWeek(weeklyPlanId).forEach { category ->
+                categoryPlanTargetDao.getForCategory(category.id).forEach { target ->
+                    categoryPlanTargetDao.update(target.copy(actualValue = null))
+                }
+            }
+
+            weeklyPlanDao.update(
+                plan.copy(
+                    status = DRAFT_STATUS,
+                    note = null,
+                    loadRating = null
+                )
+            )
+        }
+    }
+
     suspend fun approvePlan(
         weeklyPlanId: Int,
         note: String? = null,
