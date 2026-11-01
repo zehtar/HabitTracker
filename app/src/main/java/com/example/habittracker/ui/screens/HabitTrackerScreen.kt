@@ -11,6 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.habittracker.ui.theme.HabitTrackerTheme
 import com.example.habittracker.ui.components.HabitCard
+import com.example.habittracker.ui.components.HabitFilterBar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -88,6 +89,31 @@ fun HabitTrackerScreen(
     }
     val habits by viewModel.habits.collectAsState(emptyList())
 
+    var selectedCategoryFilter by remember { mutableStateOf("ALL") }
+    var selectedPriorityFilter by remember { mutableStateOf("ALL") }
+    var selectedTypeFilter by remember { mutableStateOf("ALL") }
+    var selectedStatusFilter by remember { mutableStateOf("ALL") }
+
+    val filteredHabits = habits.filter { habit ->
+        val categoryMatches = when (selectedCategoryFilter) {
+            "ALL" -> true
+            "NONE" -> habit.category.isNullOrBlank()
+            else -> habit.category == selectedCategoryFilter
+        }
+        val priorityMatches =
+            selectedPriorityFilter == "ALL" ||
+                habit.priority == selectedPriorityFilter
+        val typeMatches =
+            selectedTypeFilter == "ALL" ||
+                habit.habitType.equals(selectedTypeFilter, ignoreCase = true)
+        val statusMatches = when (selectedStatusFilter) {
+            "ACTIVE" -> !habit.isPaused
+            "PAUSED" -> habit.isPaused
+            else -> true
+        }
+        categoryMatches && priorityMatches && typeMatches && statusMatches
+    }
+
     LaunchedEffect(initialHabitId, habits) {
 
         if (
@@ -156,8 +182,31 @@ fun HabitTrackerScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text("Habit Tracker")
-            Text("Количество привычек: ${habits.size}")
-            Spacer(modifier = Modifier.height(16.dp))
+            Text("Показано привычек: ${filteredHabits.size} из ${habits.size}")
+            Spacer(modifier = Modifier.height(8.dp))
+
+            HabitFilterBar(
+                selectedCategory = selectedCategoryFilter,
+                selectedPriority = selectedPriorityFilter,
+                selectedType = selectedTypeFilter,
+                selectedStatus = selectedStatusFilter,
+                onCategorySelected = { selectedCategoryFilter = it },
+                onPrioritySelected = { selectedPriorityFilter = it },
+                onTypeSelected = { selectedTypeFilter = it },
+                onStatusSelected = { selectedStatusFilter = it },
+                onClear = {
+                    selectedCategoryFilter = "ALL"
+                    selectedPriorityFilter = "ALL"
+                    selectedTypeFilter = "ALL"
+                    selectedStatusFilter = "ALL"
+                },
+                hasActiveFilters =
+                    selectedCategoryFilter != "ALL" ||
+                        selectedPriorityFilter != "ALL" ||
+                        selectedTypeFilter != "ALL" ||
+                        selectedStatusFilter != "ALL"
+            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
@@ -167,7 +216,7 @@ fun HabitTrackerScreen(
                 )
             ) {
 
-                val sortedHabits = habits.sortedByDescending {
+                val sortedHabits = filteredHabits.sortedByDescending {
                     it.completed
                 }
 
