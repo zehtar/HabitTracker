@@ -4,8 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.weight
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
@@ -63,35 +62,39 @@ fun HabitFilterBar(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        androidx.compose.foundation.layout.Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(androidx.compose.foundation.rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
             HabitFilterDropdown(
-                modifier = Modifier,
+                modifier = Modifier.weight(1f),
                 value = selectedCategory,
                 options = categories,
                 onSelected = onCategorySelected
             )
             HabitFilterDropdown(
-                modifier = Modifier,
+                modifier = Modifier.weight(1f),
                 value = selectedPriority,
                 options = priorities,
                 onSelected = onPrioritySelected
             )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
             HabitFilterDropdown(
-                modifier = Modifier,
+                modifier = Modifier.weight(1f),
                 value = selectedType,
                 options = types,
                 onSelected = onTypeSelected
             )
             HabitFilterDropdown(
-                modifier = Modifier,
+                modifier = Modifier.weight(1f),
                 value = selectedStatus,
                 options = statuses,
                 onSelected = onStatusSelected
@@ -116,7 +119,7 @@ private fun HabitFilterDropdown(
     val label = options.firstOrNull { it.first == value }?.second.orEmpty()
 
     androidx.compose.foundation.layout.Box(
-        modifier = modifier.widthIn(min = 112.dp)
+        modifier = modifier.fillMaxWidth()
     ) {
         TextButton(
             onClick = { expanded = true },
