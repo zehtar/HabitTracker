@@ -649,7 +649,10 @@ class HabitRepository(
 
     fun getFullStatistics(
         period: Flow<FullStatisticsPeriod>,
-        selectedHabitId: Flow<Int?>
+        selectedHabitId: Flow<Int?>,
+        comparisonFirstMonth: Flow<LocalDate>,
+        comparisonSecondMonth: Flow<LocalDate>,
+        categoryMonth: Flow<LocalDate>
     ): Flow<FullStatisticsUiModel> {
 
         return combine(
@@ -657,8 +660,11 @@ class HabitRepository(
             habitEntryDao.getAllEntries(),
             habitPauseDao.getAllPauses(),
             period,
-            selectedHabitId
-        ) { habits, entries, pauses, selectedPeriod, habitId ->
+            selectedHabitId,
+            comparisonFirstMonth,
+            comparisonSecondMonth,
+            categoryMonth
+        ) { habits, entries, pauses, selectedPeriod, habitId, firstMonth, secondMonth, selectedCategoryMonth ->
 
             val today = LocalDate.now()
             val habitsById = habits.associateBy { it.id }
@@ -772,28 +778,28 @@ class HabitRepository(
                 getCount(entry)
             }
 
+            val categoryMonthStart = selectedCategoryMonth.withDayOfMonth(1)
+            val categoryMonthEnd = categoryMonthStart.withDayOfMonth(categoryMonthStart.lengthOfMonth())
+            val categoryMonthEntries = validEntries.filter { (_, date) ->
+                !date.isBefore(categoryMonthStart) && !date.isAfter(categoryMonthEnd)
+            }
+
             val categoryStatistics = habits
                 .filter { !it.category.isNullOrBlank() }
                 .groupBy { it.category!! }
                 .map { (category, categoryHabits) ->
                     val categoryHabitIds = categoryHabits.map { it.id }.toSet()
-                    val categoryEntries = periodEntries.filter { (entry, _) ->
+                    val categoryEntries = categoryMonthEntries.filter { (entry, _) ->
                         entry.habitId in categoryHabitIds
                     }
-
                     CategoryStatisticsUiModel(
                         category = category,
                         habitCount = categoryHabits.size,
                         completedChecks = categoryEntries.count { (entry, _) ->
-                            habitsById[entry.habitId]?.habitType == "CHECK" &&
-                                entry.completed
+                            habitsById[entry.habitId]?.habitType == "CHECK" && entry.completed
                         },
-                        totalMinutes = categoryEntries.sumOf { (entry, _) ->
-                            getMinutes(entry)
-                        },
-                        totalCount = categoryEntries.sumOf { (entry, _) ->
-                            getCount(entry)
-                        }
+                        totalMinutes = categoryEntries.sumOf { (entry, _) -> getMinutes(entry) },
+                        totalCount = categoryEntries.sumOf { (entry, _) -> getCount(entry) }
                     )
                 }
                 .sortedBy { it.category }
@@ -865,67 +871,36 @@ class HabitRepository(
                     }
                 }
 
-            val currentMonth = today.withDayOfMonth(1)
-            val previousMonth = currentMonth.minusMonths(1)
+            val firstComparisonMonth = firstMonth.withDayOfMonth(1)
+            val secondComparisonMonth = secondMonth.withDayOfMonth(1)
 
-            val currentMonthEnd =
-                currentMonth.withDayOfMonth(currentMonth.lengthOfMonth())
-
-            val previousMonthEnd =
-                previousMonth.withDayOfMonth(previousMonth.lengthOfMonth())
-
-            val currentMonthEntries = validEntries.filter { (_, date) ->
-                !date.isBefore(currentMonth) && !date.isAfter(currentMonthEnd)
+            fun entriesForMonth(month: LocalDate) = validEntries.filter { (_, date) ->
+                !date.isBefore(month) && !date.isAfter(month.withDayOfMonth(month.lengthOfMonth()))
             }
 
-            val previousMonthEntries = validEntries.filter { (_, date) ->
-                !date.isBefore(previousMonth) && !date.isAfter(previousMonthEnd)
-            }
+            val firstMonthEntries = entriesForMonth(firstComparisonMonth)
+            val secondMonthEntries = entriesForMonth(secondComparisonMonth)
+            val firstMonthCompleted = firstMonthEntries.filter { (entry, _) -> isCompleted(entry) }
+                .distinctBy { (entry, date) -> entry.habitId to date }.size
+            val secondMonthCompleted = secondMonthEntries.filter { (entry, _) -> isCompleted(entry) }
+                .distinctBy { (entry, date) -> entry.habitId to date }.size
+            val firstMonthMinutes = firstMonthEntries.sumOf { (entry, _) -> getMinutes(entry) }
+            val secondMonthMinutes = secondMonthEntries.sumOf { (entry, _) -> getMinutes(entry) }
 
-            val currentMonthCompleted = currentMonthEntries
-                .filter { (entry, _) -> isCompleted(entry) }
-                .distinctBy { (entry, date) -> entry.habitId to date }
-                .size
-
-            val previousMonthCompleted = previousMonthEntries
-                .filter { (entry, _) -> isCompleted(entry) }
-                .distinctBy { (entry, date) -> entry.habitId to date }
-                .size
-
-            val currentMonthMinutes = currentMonthEntries.sumOf { (entry, _) ->
-                getMinutes(entry)
-            }
-
-            val previousMonthMinutes = previousMonthEntries.sumOf { (entry, _) ->
-                getMinutes(entry)
-            }
-
-            fun calculateChangePercent(
-                oldValue: Int,
-                newValue: Int
-            ): Int {
-                if (oldValue == 0) {
-                    return if (newValue == 0) 0 else 100
-                }
-
+            fun calculateChangePercent(oldValue: Int, newValue: Int): Int {
+                if (oldValue == 0) return if (newValue == 0) 0 else 100
                 return (newValue - oldValue) * 100 / oldValue
             }
 
             val monthlyComparison = MonthlyComparisonUiModel(
-                currentMonth = currentMonth,
-                previousMonth = previousMonth,
-                currentCompleted = currentMonthCompleted,
-                previousCompleted = previousMonthCompleted,
-                currentMinutes = currentMonthMinutes,
-                previousMinutes = previousMonthMinutes,
-                completedChangePercent = calculateChangePercent(
-                    previousMonthCompleted,
-                    currentMonthCompleted
-                ),
-                minutesChangePercent = calculateChangePercent(
-                    previousMonthMinutes,
-                    currentMonthMinutes
-                )
+                currentMonth = secondComparisonMonth,
+                previousMonth = firstComparisonMonth,
+                currentCompleted = secondMonthCompleted,
+                previousCompleted = firstMonthCompleted,
+                currentMinutes = secondMonthMinutes,
+                previousMinutes = firstMonthMinutes,
+                completedChangePercent = calculateChangePercent(firstMonthCompleted, secondMonthCompleted),
+                minutesChangePercent = calculateChangePercent(firstMonthMinutes, secondMonthMinutes)
             )
 
             val selectedHabit = habitsById[habitId]
@@ -1156,7 +1131,8 @@ class HabitRepository(
                 monthlyComparison = monthlyComparison,
                 selectedHabit = habitStatistics,
                 habitCalendar = habitCalendar,
-                categoryStatistics = categoryStatistics
+                categoryStatistics = categoryStatistics,
+                categoryStatisticsMonth = categoryMonthStart
                 )
         }
     }
