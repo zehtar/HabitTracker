@@ -17,7 +17,8 @@ data class FullStatisticsUiModel(
     val monthlyComparison: MonthlyComparisonUiModel = MonthlyComparisonUiModel(),
     val selectedHabit: HabitFullStatisticsUiModel? = null,
     val habitCalendar: List<HabitCalendarDayUiModel> = emptyList(),
-    val categoryStatistics: List<CategoryStatisticsUiModel> = emptyList()
+    val categoryStatistics: List<CategoryStatisticsUiModel> = emptyList(),
+    val categoryStatisticsMonth: LocalDate = LocalDate.now().withDayOfMonth(1)
 )
 
 data class FullStatisticsOverallUiModel(
