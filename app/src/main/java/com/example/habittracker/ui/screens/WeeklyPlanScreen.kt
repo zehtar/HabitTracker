@@ -143,6 +143,7 @@ fun WeeklyPlanScreen(onOpenHistory: () -> Unit) {
                         PlanHeroCard(
                             isDraft = isDraft,
                             onCheck = viewModel::finishTestWeek,
+                            onEditPlan = if (!isDraft) viewModel::reopenCurrentPlanForEditing else null,
                             onHistory = onOpenHistory,
                             onPreviousReport = if (pendingReport != null) viewModel::showReportAgain else null,
                             isBusy = uiState.isApproving
@@ -259,6 +260,7 @@ fun WeeklyPlanScreen(onOpenHistory: () -> Unit) {
 private fun PlanHeroCard(
     isDraft: Boolean,
     onCheck: () -> Unit,
+    onEditPlan: (() -> Unit)?,
     onHistory: () -> Unit,
     onPreviousReport: (() -> Unit)?,
     isBusy: Boolean
@@ -313,6 +315,21 @@ private fun PlanHeroCard(
                     Icon(Icons.Default.BarChart, contentDescription = null)
                     Spacer(Modifier.width(7.dp))
                     Text("Проверить план", fontWeight = FontWeight.SemiBold)
+                }
+            } else if (onEditPlan != null) {
+                Button(
+                    onClick = onEditPlan,
+                    enabled = !isBusy,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(15.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = PlanIndigo
+                    )
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null)
+                    Spacer(Modifier.width(7.dp))
+                    Text("Редактировать план", fontWeight = FontWeight.SemiBold)
                 }
             }
             Button(
