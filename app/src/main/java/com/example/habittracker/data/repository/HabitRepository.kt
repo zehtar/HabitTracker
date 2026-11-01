@@ -9,6 +9,14 @@ import kotlinx.coroutines.flow.*
 import java.time.DayOfWeek
 import java.time.temporal.ChronoUnit
 
+private data class FullStatisticsSelection(
+    val period: FullStatisticsPeriod,
+    val habitId: Int?,
+    val firstMonth: LocalDate,
+    val secondMonth: LocalDate,
+    val categoryMonth: LocalDate
+)
+
 class HabitRepository(
     private val database: HabitDatabase
 ) {
@@ -655,16 +663,33 @@ class HabitRepository(
         categoryMonth: Flow<LocalDate>
     ): Flow<FullStatisticsUiModel> {
 
-        return combine(
-            habitDao.getAllHabits(),
-            habitEntryDao.getAllEntries(),
-            habitPauseDao.getAllPauses(),
+        val selection = combine(
             period,
             selectedHabitId,
             comparisonFirstMonth,
             comparisonSecondMonth,
             categoryMonth
-        ) { habits, entries, pauses, selectedPeriod, habitId, firstMonth, secondMonth, selectedCategoryMonth ->
+        ) { selectedPeriod, habitId, firstMonth, secondMonth, selectedCategoryMonth ->
+            FullStatisticsSelection(
+                period = selectedPeriod,
+                habitId = habitId,
+                firstMonth = firstMonth,
+                secondMonth = secondMonth,
+                categoryMonth = selectedCategoryMonth
+            )
+        }
+
+        return combine(
+            habitDao.getAllHabits(),
+            habitEntryDao.getAllEntries(),
+            habitPauseDao.getAllPauses(),
+            selection
+        ) { habits, entries, pauses, selected ->
+            val selectedPeriod = selected.period
+            val habitId = selected.habitId
+            val firstMonth = selected.firstMonth
+            val secondMonth = selected.secondMonth
+            val selectedCategoryMonth = selected.categoryMonth
 
             val today = LocalDate.now()
             val habitsById = habits.associateBy { it.id }
