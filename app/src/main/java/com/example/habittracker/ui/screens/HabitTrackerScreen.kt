@@ -158,7 +158,8 @@ fun HabitTrackerScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
+                .padding(top = 8.dp, bottom = 16.dp)
         ) {
             WeekSelector(
 
@@ -180,7 +181,7 @@ fun HabitTrackerScreen(
 
             )
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             val activeHabits = habits.filterNot { it.isPaused }
             val completedHabits = activeHabits.count { it.completed }
