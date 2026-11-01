@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,6 +49,10 @@ fun FullStatisticsScreen(
     val fullStatistics by viewModel
         .fullStatistics
         .collectAsState()
+
+    val comparisonFirstMonth by viewModel.comparisonFirstMonth.collectAsState()
+    val comparisonSecondMonth by viewModel.comparisonSecondMonth.collectAsState()
+    val categoryStatisticsMonth by viewModel.categoryStatisticsMonth.collectAsState()
 
     val habits by viewModel
         .allHabits
@@ -259,7 +264,11 @@ fun FullStatisticsScreen(
         )
 
         MonthlyComparisonCard(
-            comparison = fullStatistics.monthlyComparison
+            comparison = fullStatistics.monthlyComparison,
+            onPreviousFirstMonth = viewModel::previousComparisonFirstMonth,
+            onNextFirstMonth = viewModel::nextComparisonFirstMonth,
+            onPreviousSecondMonth = viewModel::previousComparisonSecondMonth,
+            onNextSecondMonth = viewModel::nextComparisonSecondMonth
         )
 
         Spacer(
@@ -278,10 +287,18 @@ fun FullStatisticsScreen(
             modifier = Modifier.height(10.dp)
         )
 
+        MonthSelector(
+            month = categoryStatisticsMonth,
+            onPrevious = viewModel::previousCategoryStatisticsMonth,
+            onNext = viewModel::nextCategoryStatisticsMonth
+        )
+
+        Spacer(Modifier.height(10.dp))
+
         if (fullStatistics.categoryStatistics.isEmpty()) {
             FullStatisticsCard {
                 Text(
-                    text = "За выбранный период пока нет привычек с категориями.",
+                    text = "За ${formatMonthYear(categoryStatisticsMonth)} пока нет данных по категориям.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -604,20 +621,28 @@ fun ActivityPlaceholderCard() {
 
 @Composable
 fun MonthlyComparisonCard(
-    comparison: MonthlyComparisonUiModel
+    comparison: MonthlyComparisonUiModel,
+    onPreviousFirstMonth: () -> Unit,
+    onNextFirstMonth: () -> Unit,
+    onPreviousSecondMonth: () -> Unit,
+    onNextSecondMonth: () -> Unit
 ) {
     FullStatisticsCard {
 
-        Text(
-            text = "${formatMonth(comparison.previousMonth)} → " +
-                    formatMonth(comparison.currentMonth),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
+        MonthSelector(
+            title = "Первый месяц",
+            month = comparison.previousMonth,
+            onPrevious = onPreviousFirstMonth,
+            onNext = onNextFirstMonth
         )
-
-        Spacer(
-            modifier = Modifier.height(14.dp)
+        Spacer(Modifier.height(8.dp))
+        MonthSelector(
+            title = "Второй месяц",
+            month = comparison.currentMonth,
+            onPrevious = onPreviousSecondMonth,
+            onNext = onNextSecondMonth
         )
+        Spacer(Modifier.height(14.dp))
 
         ComparisonRow(
             title = "Выполнено",
@@ -646,6 +671,43 @@ fun MonthlyComparisonCard(
         )
     }
 }
+
+@Composable
+fun MonthSelector(
+    month: LocalDate,
+    title: String? = null,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (title != null) {
+            Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            IconButton(onClick = onPrevious) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Предыдущий месяц")
+            }
+            Text(
+                text = formatMonthYear(month),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            IconButton(onClick = onNext) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Следующий месяц",
+                    modifier = Modifier.rotate(180f)
+                )
+            }
+        }
+    }
+}
+
+fun formatMonthYear(date: LocalDate): String = "${formatMonth(date)} ${date.year}"
 
 fun formatChangePercent(
     change: Int
