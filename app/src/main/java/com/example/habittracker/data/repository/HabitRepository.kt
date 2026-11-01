@@ -772,6 +772,32 @@ class HabitRepository(
                 getCount(entry)
             }
 
+            val categoryStatistics = habits
+                .filter { !it.category.isNullOrBlank() }
+                .groupBy { it.category!! }
+                .map { (category, categoryHabits) ->
+                    val categoryHabitIds = categoryHabits.map { it.id }.toSet()
+                    val categoryEntries = periodEntries.filter { (entry, _) ->
+                        entry.habitId in categoryHabitIds
+                    }
+
+                    CategoryStatisticsUiModel(
+                        category = category,
+                        habitCount = categoryHabits.size,
+                        completedChecks = categoryEntries.count { (entry, _) ->
+                            habitsById[entry.habitId]?.habitType == "CHECK" &&
+                                entry.completed
+                        },
+                        totalMinutes = categoryEntries.sumOf { (entry, _) ->
+                            getMinutes(entry)
+                        },
+                        totalCount = categoryEntries.sumOf { (entry, _) ->
+                            getCount(entry)
+                        }
+                    )
+                }
+                .sortedBy { it.category }
+
 
             val timeCompletions = completedEntries.count { (entry, _) ->
                 habitsById[entry.habitId]?.habitType == "TIME" &&
@@ -1129,7 +1155,8 @@ class HabitRepository(
                 activity = activity,
                 monthlyComparison = monthlyComparison,
                 selectedHabit = habitStatistics,
-                habitCalendar = habitCalendar
+                habitCalendar = habitCalendar,
+                categoryStatistics = categoryStatistics
                 )
         }
     }
